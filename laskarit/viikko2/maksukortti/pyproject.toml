@@ -1,0 +1,20 @@
+[project]
+name = "maksukortti"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Aapo Koivula",email = "koivula.aapo@gmail.com"}
+]
+requires-python = "^3.12"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)"
+]
