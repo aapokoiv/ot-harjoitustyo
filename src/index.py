@@ -12,6 +12,8 @@ def main():
     print("  m row1 col1 row2 col2 -> move piece")
     print("  q                     -> quit\n")
 
+    print(" Invalid commands crash the app currently")
+
     while True:
         print_board(game.board)
         print(f"Turn: {game.turn}")

@@ -9,7 +9,7 @@ def start(ctx):
         stdin=None,
         stdout=None,
         stderr=None
-    )@task
+    )
 ### code that AI helped ending
 
 @task
