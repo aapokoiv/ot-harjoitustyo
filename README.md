@@ -1,7 +1,25 @@
 # Chess app
 
-I will create the *magical* game of **chess**.
+With this app you can *eventually* play chess locally.
 
-[Requirements specification](documentation/requirements-specification.md)
+## Documentation
 
-[Working hours register](documentation/working-hours-register.md)
+- [Requirements specification](documentation/requirements-specification.md)
+
+- [Working hours register](documentation/working-hours-register.md)
+
+- [Changelog](documentation/changelog.md)
+
+## Installation
+
+1. Install dependencies
+   
+Run this in the project root:
+```bash
+poetry install
+```
+2. Start the app
+
+```bash
+poetry run invoke start
+```
