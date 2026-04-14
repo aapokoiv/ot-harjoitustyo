@@ -10,6 +10,8 @@ With this app you can *eventually* play chess locally.
 
 - [Changelog](documentation/changelog.md)
 
+- [Architecture](documentation/architecture.md)
+
 ## Installation
 
 1. Install dependencies
@@ -23,3 +25,5 @@ poetry install
 ```bash
 poetry run invoke start
 ```
+
+

@@ -1,6 +1,6 @@
 import unittest
-from Board import Board
-from Piece import Pawn
+from board import Board
+from piece import Pawn
 
 class TestBoard(unittest.TestCase):
     def setUp(self):
@@ -22,3 +22,29 @@ class TestBoard(unittest.TestCase):
         self.board.move_piece((6, 4), (4, 4))
         self.assertEqual(str(self.board.get_piece(4, 4)), "wP")
 
+    def test_kingside_castling(self):
+        self.board.set_piece(7, 5, None)
+        self.board.set_piece(7, 6, None)
+        self.board.move_piece((7, 4), (7, 6))
+        self.assertEqual(str(self.board.get_piece(7, 6)), "wK")
+        self.assertEqual(str(self.board.get_piece(7, 5)), "wR")
+        self.assertTrue(getattr(self.board.get_piece(7, 6), "has_moved", False))
+        self.assertTrue(getattr(self.board.get_piece(7, 5), "has_moved", False))
+
+    def test_queenside_castling(self):
+        self.board.set_piece(7, 1, None)
+        self.board.set_piece(7, 2, None)
+        self.board.set_piece(7, 3, None)
+        self.board.move_piece((7, 4), (7, 2))
+        self.assertEqual(str(self.board.get_piece(7, 2)), "wK")
+        self.assertEqual(str(self.board.get_piece(7, 3)), "wR")
+        self.assertTrue(getattr(self.board.get_piece(7, 2), "has_moved", False))
+        self.assertTrue(getattr(self.board.get_piece(7, 3), "has_moved", False))
+
+    def test_en_passant_capture(self):
+        self.board.set_piece(4, 4, Pawn("b"))
+        self.board.move_piece((6, 3), (4, 3))
+        self.assertEqual(self.board.en_passant_target, (5, 3))
+        self.board.move_piece((4, 4), (5, 3))
+        self.assertEqual(str(self.board.get_piece(5, 3)), "bP")
+        self.assertIsNone(self.board.get_piece(4, 4))

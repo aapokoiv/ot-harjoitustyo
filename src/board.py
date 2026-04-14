@@ -1,11 +1,12 @@
-from Piece import Pawn, Knight, Bishop, Rook, Queen, King
+from piece import Pawn, Knight, Bishop, Rook, Queen, King
 
-board_rows = 8
-board_cols = 8
+# Use uppercase for module-level constants
+BOARD_ROWS = 8
+BOARD_COLS = 8
 
 class Board:
     def __init__(self):
-        self.grid = [[None for _ in range(board_cols)] for _ in range(board_rows)] # [0][0] = a8
+        self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)] # [0][0] = a8
         self.en_passant_target = None
 
     def get_piece(self, row, col):
@@ -16,11 +17,11 @@ class Board:
 
     def move_piece(self, start, end):
         piece = self.get_piece(start[0], start[1])
-        if piece == None:
+        if piece is None:
             raise TypeError("Can't move a non-existent piece")
 
         if end == self.en_passant_target and isinstance(piece, Pawn):
-            self.set_piece(start[0], end[1], None)
+            self.set_piece(start[0], end[1], None)  # Remove the captured piece separately
 
         self.set_piece(start[0], start[1], None)
         self.set_piece(end[0], end[1], piece)
@@ -29,17 +30,7 @@ class Board:
             piece.has_moved = True
 
         if isinstance(piece, King) and abs(start[1] - end[1]) == 2:
-            row = end[0]
-            if end[1] == 6:
-                rook = self.get_piece(row, 7)
-                self.set_piece(row, 7, None)
-                self.set_piece(row, 5, rook)
-                rook.has_moved = True
-            elif end[1] == 2:
-                rook = self.get_piece(row, 0)
-                self.set_piece(row, 0, None)
-                self.set_piece(row, 3, rook)
-                rook.has_moved = True
+            self._handle_castling(end)
 
         self.en_passant_target = None
         if isinstance(piece, Pawn) and abs(start[0] - end[0]) == 2:
@@ -54,6 +45,21 @@ class Board:
 
     def handle_promotion(self, row, col, piece):
         self.grid[row][col] = Queen(f"{piece.color}")
+
+    def _handle_castling(self, end):
+        row = end[0]
+        if end[1] == 6:
+            rook = self.get_piece(row, 7)
+            self.set_piece(row, 7, None)
+            self.set_piece(row, 5, rook)
+            if rook is not None and hasattr(rook, "has_moved"):
+                rook.has_moved = True
+        elif end[1] == 2:
+            rook = self.get_piece(row, 0)
+            self.set_piece(row, 0, None)
+            self.set_piece(row, 3, rook)
+            if rook is not None and hasattr(rook, "has_moved"):
+                rook.has_moved = True
 
 
     def set_starting_position(self):

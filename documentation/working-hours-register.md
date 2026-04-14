@@ -12,6 +12,7 @@
 | 31.3| 1    | Did tests for board class, tested application on Cubbli Linux
 | 11.4| 1    | Implemented Bishop, Rook and Queen classes
 | 12.4| 2    | Implemented King class and castling
-| 14.4| 3    | Added en passant and queen promotion to pawn and reformatted the piece classes.
+| 14.4| 2    | Added en passant and queen promotion to pawn and reformatted the piece classes.
+| 14.4| 2    | Added pylint and fixed errors, made architecture graphs, did some cleanup and testing
 
-|total| 17   |   |
+|total| 19   |   |

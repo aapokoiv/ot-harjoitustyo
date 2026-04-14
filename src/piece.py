@@ -33,9 +33,9 @@ class Pawn(Piece):
             new_col = col + diag
             if 0 <= new_col < 8 and 0 <= new_row < 8:
                 target = grid[new_row][new_col]
-                if target != None and target.color != self.color:
+                if target is not None and target.color != self.color:
                     moves.append((new_row, new_col))
-                if en_passant_target != None and (new_row, new_col) == en_passant_target:
+                if en_passant_target is not None and (new_row, new_col) == en_passant_target:
                     moves.append((new_row, new_col))
 
         return moves
@@ -51,12 +51,12 @@ class Knight(Piece):
         grid = board.grid
 
         directions = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
-        for dir in directions:
-            new_row = row + dir[0]
-            new_col = col + dir[1]
+        for d in directions:
+            new_row = row + d[0]
+            new_col = col + d[1]
             if 0 <= new_col < 8 and 0 <= new_row < 8:
                 target = grid[new_row][new_col]
-                if (target and target.color != self.color) or target == None:
+                if target is None or (target and target.color != self.color):
                     moves.append((new_row, new_col))
 
         return moves
@@ -70,15 +70,15 @@ class Bishop(Piece):
         grid = board.grid
 
         directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
-        for dir in directions:
-            new_row = row + dir[0]
-            new_col = col + dir[1]
+        for d in directions:
+            new_row = row + d[0]
+            new_col = col + d[1]
             while 0 <= new_row < 8 and 0 <= new_col < 8:
                 target = grid[new_row][new_col]
-                if target == None:
+                if target is None:
                     moves.append((new_row, new_col))
-                    new_row += dir[0]
-                    new_col += dir[1]
+                    new_row += d[0]
+                    new_col += d[1]
                     continue
                 if target.color != self.color:
                     moves.append((new_row, new_col))
@@ -99,15 +99,15 @@ class Rook(Piece):
         grid = board.grid
 
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        for dir in directions:
-            new_row = row + dir[0]
-            new_col = col + dir[1]
+        for d in directions:
+            new_row = row + d[0]
+            new_col = col + d[1]
             while 0 <= new_row < 8 and 0 <= new_col < 8:
                 target = grid[new_row][new_col]
-                if target == None:
+                if target is None:
                     moves.append((new_row, new_col))
-                    new_row += dir[0]
-                    new_col += dir[1]
+                    new_row += d[0]
+                    new_col += d[1]
                     continue
                 if target.color != self.color:
                     moves.append((new_row, new_col))
@@ -126,15 +126,15 @@ class Queen(Piece):
         grid = board.grid
 
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]
-        for dir in directions:
-            new_row = row + dir[0]
-            new_col = col + dir[1]
+        for d in directions:
+            new_row = row + d[0]
+            new_col = col + d[1]
             while 0 <= new_row < 8 and 0 <= new_col < 8:
                 target = grid[new_row][new_col]
-                if target == None:
+                if target is None:
                     moves.append((new_row, new_col))
-                    new_row += dir[0]
-                    new_col += dir[1]
+                    new_row += d[0]
+                    new_col += d[1]
                     continue
                 if target.color != self.color:
                     moves.append((new_row, new_col))
@@ -154,23 +154,25 @@ class King(Piece):
         grid = board.grid
 
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]
-        for dir in directions:
-            new_row = row + dir[0]
-            new_col = col + dir[1]
+        for d in directions:
+            new_row = row + d[0]
+            new_col = col + d[1]
             if 0 <= new_row < 8 and 0 <= new_col < 8:
                 target = grid[new_row][new_col]
-                if target == None or target.color != self.color:
+                if target is None or target.color != self.color:
                     moves.append((new_row, new_col))
 
         if not self.has_moved:
             rook = grid[row][7]
-            if rook != None and rook.color == self.color and getattr(rook, "has_moved") == False:
-                if grid[row][5] == None and grid[row][6] == None:
+            if (rook is not None and rook.color == self.color
+                    and not getattr(rook, "has_moved")):
+                if grid[row][5] is None and grid[row][6] is None:
                     moves.append((row, 6))
 
             rook_q = grid[row][0]
-            if rook_q != None and rook_q.color == self.color and getattr(rook_q, "has_moved") == False:
-                if grid[row][1] == None and grid[row][2] == None and grid[row][3] == None:
+            if (rook_q is not None and rook_q.color == self.color
+                    and not getattr(rook_q, "has_moved")):
+                if grid[row][1] is None and grid[row][2] is None and grid[row][3] is None:
                     moves.append((row, 2))
 
         return moves

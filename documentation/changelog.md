@@ -7,4 +7,9 @@
 - Implemented a simple text-UI for trying the application
 - Tested the methods in the Board class 
 
+## Week 4 
+- Implemented Bishop, Rook, Queen and King classes 
+- Added logic for special moves: en passant, castling and promotion
+- Added pylint and fixed all errors
+- Made few architecture graphs for documentation
 

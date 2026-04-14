@@ -1,4 +1,4 @@
-from Game import Game 
+from game import Game
 
 def print_board(board):
     for row in board.grid:
@@ -12,15 +12,12 @@ def main():
     print("  m row1 col1 row2 col2 -> move piece")
     print("  q                     -> quit\n")
 
-    print(" Invalid commands crash the app currently")
-
     while True:
         print_board(game.board)
         print(f"Turn: {game.turn}")
 
         command = input("> ").strip().split()
 
-        print(command)
         if not command:
             continue
 
