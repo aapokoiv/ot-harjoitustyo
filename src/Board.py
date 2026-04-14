@@ -6,17 +6,55 @@ board_cols = 8
 class Board:
     def __init__(self):
         self.grid = [[None for _ in range(board_cols)] for _ in range(board_rows)] # [0][0] = a8
+        self.en_passant_target = None
 
     def get_piece(self, row, col):
         return self.grid[row][col]
-        
+
     def set_piece(self, row, col, piece):
         self.grid[row][col] = piece
 
     def move_piece(self, start, end):
         piece = self.get_piece(start[0], start[1])
+        if piece == None:
+            raise TypeError("Can't move a non-existent piece")
+
+        if end == self.en_passant_target and isinstance(piece, Pawn):
+            self.set_piece(start[0], end[1], None)
+
         self.set_piece(start[0], start[1], None)
         self.set_piece(end[0], end[1], piece)
+
+        if hasattr(piece, "has_moved"):
+            piece.has_moved = True
+
+        if isinstance(piece, King) and abs(start[1] - end[1]) == 2:
+            row = end[0]
+            if end[1] == 6:
+                rook = self.get_piece(row, 7)
+                self.set_piece(row, 7, None)
+                self.set_piece(row, 5, rook)
+                rook.has_moved = True
+            elif end[1] == 2:
+                rook = self.get_piece(row, 0)
+                self.set_piece(row, 0, None)
+                self.set_piece(row, 3, rook)
+                rook.has_moved = True
+
+        self.en_passant_target = None
+        if isinstance(piece, Pawn) and abs(start[0] - end[0]) == 2:
+            if end[0] == 3:
+                self.en_passant_target = (2, end[1])
+            else:
+                self.en_passant_target = (5, end[1])
+
+        if isinstance(piece, Pawn) and (end[0] == 0 or end[0] == 7):
+            self.handle_promotion(end[0], end[1], piece)
+
+
+    def handle_promotion(self, row, col, piece):
+        self.grid[row][col] = Queen(f"{piece.color}")
+
 
     def set_starting_position(self):
         self.grid = [[None for _ in range(8)] for _ in range(8)]
@@ -47,4 +85,3 @@ class Board:
         self.grid[0][4] = King("b")
         self.grid[7][4] = King("w")
         ### AI generated code ending
-

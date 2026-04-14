@@ -10,4 +10,8 @@
 | 30.3| 2    | Implemented knight and game classes
 | 31.3| 2    | Implemented simple text-UI and improved game and board classes
 | 31.3| 1    | Did tests for board class, tested application on Cubbli Linux
-|total| 12   |   |
+| 11.4| 1    | Implemented Bishop, Rook and Queen classes
+| 12.4| 2    | Implemented King class and castling
+| 14.4| 3    | Added en passant and queen promotion to pawn and reformatted the piece classes.
+
+|total| 17   |   |

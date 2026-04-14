@@ -10,17 +10,17 @@ an option for signing in at some point.
 
 ## Core features
 ### The player can
-- Start a new game
-- See a visual chess board 
-  - The state of the game is updated visually every move
-  - Player can move a piece by clicking it and a square the piece can move to
+- Start a new game :white_check_mark:
+- See a visual chess board :white_check_mark:
+  - The state of the game is updated visually every move :white_check_mark:
+  - Player can move a piece by clicking it and a square the piece can move to :white_check_mark:
 
 ### The application will
 - Validate played moves
   - The app will block illegal moves 
   - Illegal move will result in a notification and the game continuing
 - Recognize when the game ends either in checkmate or stalemate
-- Manage turns between white and black
+- Manage turns between white and black :white_check_mark:
 
 
 ## Future feature ideas

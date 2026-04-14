@@ -13,7 +13,7 @@ class Game:
         if piece.color != self.turn:
             return False
 
-        moves = piece.get_moves((start[0], start[1]), self.board.grid)
+        moves = piece.get_moves((start[0], start[1]), self.board)
 
         if end not in moves:
             return False
@@ -27,9 +27,8 @@ class Game:
         piece = self.board.get_piece(row, col)
         moves = []
         if piece:
-            moves = piece.get_moves((row, col), self.board.grid)
+            moves = piece.get_moves((row, col), self.board)
         return piece, moves
 
     def switch_turn(self):
         self.turn = "b" if self.turn == "w" else "w"
-
