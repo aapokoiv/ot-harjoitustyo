@@ -17,5 +17,9 @@
 | 20.4| 2    | Started work on Tkinter gui
 | 20.4| 2    | Started implementing check detection
 | 21.4| 3    | Finished Tkinter gui including visible legal moves, options and logic for promotion
+| 21.4| 2    | Added fen <-> board conversion for db storage and future move validation.
+| 21.4| 2    | Started work on the db initialization
+| 21.4| 2    | Updated documentation and made sequence graphs
 
-|total| 26   |   |
+
+|total| 32   |   |

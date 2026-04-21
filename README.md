@@ -1,6 +1,7 @@
 # Chess app
 
-With this app you can *eventually* play chess locally.
+With this app you can move chess pieces according to their characteristics.
+Check based move validation and therefore proper chess is not yet fully working.
 
 ## Documentation
 
@@ -27,3 +28,26 @@ poetry run invoke start
 ```
 
 
+## Testing and linting
+
+1. Make sure poetry is installed
+
+### Unittests
+
+```bash
+poetry run invoke test
+```
+
+### Pylint
+
+```bash
+poetry run invoke lint
+```
+
+### Coverage report
+
+```bash
+poetry run invoke coverage-report
+```
+```
+```

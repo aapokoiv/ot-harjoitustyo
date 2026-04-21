@@ -1,11 +1,12 @@
 from piece import Pawn, Knight, Bishop, Rook, Queen, King
+from fen import board_to_fen, board_from_fen
 
 BOARD_ROWS = 8
 BOARD_COLS = 8
 
 class Board:
     def __init__(self):
-        self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)] # [0][0] = a8
+        self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)]  # [0][0] = a8
         self.en_passant_target = None
         self.pending_promotion = None
 
@@ -15,13 +16,59 @@ class Board:
     def set_piece(self, row, col, piece):
         self.grid[row][col] = piece
 
+    def to_fen(self, side_to_move, halfmove_clock=0, fullmove_number=1):
+        return board_to_fen(
+            board=self,
+            side_to_move=side_to_move,
+            halfmove_clock=halfmove_clock,
+            fullmove_number=fullmove_number,
+        )
+
+    @staticmethod
+    def from_fen(fen):
+        return board_from_fen(
+            fen=fen,
+            board_cls=Board,
+            board_rows=BOARD_ROWS,
+            board_cols=BOARD_COLS,
+        )
+
+    def clone(self):
+        board_copy = Board()
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                piece = self.grid[row][col]
+                if piece is None:
+                    continue
+
+                piece_copy = type(piece)(piece.color)
+                if hasattr(piece, "has_moved"):
+                    piece_copy.has_moved = getattr(piece, "has_moved")
+                board_copy.grid[row][col] = piece_copy
+
+        board_copy.en_passant_target = (
+            None
+            if self.en_passant_target is None
+            else (self.en_passant_target[0], self.en_passant_target[1])
+        )
+        board_copy.pending_promotion = (
+            None
+            if self.pending_promotion is None
+            else (
+                self.pending_promotion[0],
+                self.pending_promotion[1],
+                self.pending_promotion[2],
+            )
+        )
+        return board_copy
+
     def move_piece(self, start, end):
         piece = self.get_piece(start[0], start[1])
         if piece is None:
             raise TypeError("Can't move a non-existent piece")
 
         if end == self.en_passant_target and isinstance(piece, Pawn):
-            self.set_piece(start[0], end[1], None)  # Remove the captured piece separately
+            self.set_piece(start[0], end[1], None)
 
         self.set_piece(start[0], start[1], None)
         self.set_piece(end[0], end[1], piece)
@@ -41,7 +88,6 @@ class Board:
 
         if isinstance(piece, Pawn) and (end[0] == 0 or end[0] == 7):
             self.handle_promotion(end[0], end[1], piece)
-
 
     def handle_promotion(self, row, col, piece):
         self.pending_promotion = (row, col, piece.color)
@@ -83,11 +129,11 @@ class Board:
             if rook is not None and hasattr(rook, "has_moved"):
                 rook.has_moved = True
 
-
     def set_starting_position(self):
         self.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.en_passant_target = None
+        self.pending_promotion = None
 
-        ### AI generated code starting
         for col in range(8):
             self.grid[1][col] = Pawn("b")
             self.grid[6][col] = Pawn("w")
@@ -112,65 +158,102 @@ class Board:
 
         self.grid[0][4] = King("b")
         self.grid[7][4] = King("w")
-        ### AI generated code ending
 
     def is_square_attacked(self, row, col, by_color):
+        return (
+            self._pawn_attacks(row, col, by_color)
+            or self._knight_attacks(row, col, by_color)
+            or self._king_attacks(row, col, by_color)
+            or self._sliding_attacks(
+                row,
+                col,
+                by_color,
+                directions=[(0, 1), (1, 0), (0, -1), (-1, 0)],
+                piece_types=(Rook, Queen),
+            )
+            or self._sliding_attacks(
+                row,
+                col,
+                by_color,
+                directions=[(1, 1), (-1, 1), (-1, -1), (1, -1)],
+                piece_types=(Bishop, Queen),
+            )
+        )
+
+
+    def _pawn_attacks(self, row, col, by_color):
         grid = self.grid
+        direction = -1 if by_color == "w" else 1
+        pawn_row = row - direction
 
-        pawn_row = row + 1 if by_color == "w" else row - 1
-        if 0 <= pawn_row < 8:
-            for dc in (-1, 1):
-                pawn_col = col + dc
-                if 0 <= pawn_col < 8:
-                    piece = grid[pawn_row][pawn_col]
-                    if isinstance(piece, Pawn) and piece.color == by_color:
-                        return True
+        if not 0 <= pawn_row < 8:
+            return False
 
-        knight_offsets = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
-        for dr, dc in knight_offsets:
-            knight_row = row + dr
-            knight_col = col + dc
-            if 0 <= knight_row < 8 and 0 <= knight_col < 8:
-                piece = grid[knight_row][knight_col]
+        for dc in (-1, 1):
+            pawn_col = col + dc
+            if 0 <= pawn_col < 8:
+                piece = grid[pawn_row][pawn_col]
+                if isinstance(piece, Pawn) and piece.color == by_color:
+                    return True
+        return False
+
+
+    def _knight_attacks(self, row, col, by_color):
+        grid = self.grid
+        offsets = [(1, 2), (1, -2), (-1, 2), (-1, -2),
+                (2, 1), (2, -1), (-2, 1), (-2, -1)]
+
+        for dr, dc in offsets:
+            r, c = row + dr, col + dc
+            if 0 <= r < 8 and 0 <= c < 8:
+                piece = grid[r][c]
                 if isinstance(piece, Knight) and piece.color == by_color:
                     return True
+        return False
+
+
+    def _king_attacks(self, row, col, by_color):
+        grid = self.grid
 
         for dr in (-1, 0, 1):
             for dc in (-1, 0, 1):
                 if dr == 0 and dc == 0:
                     continue
-                king_row = row + dr
-                king_col = col + dc
-                if 0 <= king_row < 8 and 0 <= king_col < 8:
-                    piece = grid[king_row][king_col]
-                    if isinstance(piece, King) and piece.color == by_color:
-                        return True
 
-        orthogonal = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        for dr, dc in orthogonal:
-            r = row + dr
-            c = col + dc
+                r, c = row + dr, col + dc
+                if not (0 <= r < 8 and 0 <= c < 8):
+                    continue
+
+                piece = grid[r][c]
+                if isinstance(piece, King) and piece.color == by_color:
+                    return True
+        return False
+
+
+    def _sliding_attacks(
+        self,
+        row,
+        col,
+        by_color,
+        *,
+        directions,
+        piece_types,
+    ):
+        grid = self.grid
+
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+
             while 0 <= r < 8 and 0 <= c < 8:
                 piece = grid[r][c]
+
                 if piece is None:
                     r += dr
                     c += dc
                     continue
-                if piece.color == by_color and isinstance(piece, (Rook, Queen)):
+
+                if piece.color == by_color and isinstance(piece, piece_types):
                     return True
                 break
 
-        diagonal = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
-        for dr, dc in diagonal:
-            r = row + dr
-            c = col + dc
-            while 0 <= r < 8 and 0 <= c < 8:
-                piece = grid[r][c]
-                if piece is None:
-                    r += dr
-                    c += dc
-                    continue
-                if piece.color == by_color and isinstance(piece, (Bishop, Queen)):
-                    return True
-                break
         return False

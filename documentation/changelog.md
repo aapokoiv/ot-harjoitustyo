@@ -13,3 +13,9 @@
 - Added pylint and fixed all errors
 - Made few architecture graphs for documentation
 
+## Week 5 
+- Implemented a tkinter GUI for the game, with user controlled pawn promotion
+- Added the basis for database game and move storage
+- Started the work on check detection and move validation
+- Added fen conversions for the board state.
+- Made sequence graphs for core parts of the project.
