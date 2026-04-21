@@ -13,6 +13,10 @@ Check based move validation and therefore proper chess is not yet fully working.
 
 - [Architecture](documentation/architecture.md)
 
+## Latest release
+
+[Latest release](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko5)
+
 ## Installation
 
 1. Install dependencies
