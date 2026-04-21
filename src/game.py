@@ -20,6 +20,20 @@ class Game:
 
         self.board.move_piece(start, end)
 
+        if self.board.pending_promotion is not None:
+            return True
+
+        self.switch_turn()
+        return True
+
+    def complete_promotion(self, piece_type):
+        if self.board.pending_promotion is None:
+            return False
+
+        success = self.board.promote(piece_type)
+        if not success:
+            return False
+
         self.switch_turn()
         return True
 

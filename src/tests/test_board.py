@@ -1,6 +1,6 @@
 import unittest
 from board import Board
-from piece import Pawn
+from piece import Pawn, Rook
 
 class TestBoard(unittest.TestCase):
     def setUp(self):
@@ -48,3 +48,27 @@ class TestBoard(unittest.TestCase):
         self.board.move_piece((4, 4), (5, 3))
         self.assertEqual(str(self.board.get_piece(5, 3)), "bP")
         self.assertIsNone(self.board.get_piece(4, 4))
+
+    def test_pending_promotion_set(self):
+        self.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        pawn = Pawn("w")
+        self.board.set_piece(1, 0, pawn)
+        self.board.move_piece((1, 0), (0, 0))
+
+        self.assertIsNotNone(self.board.pending_promotion)
+        self.assertEqual(self.board.pending_promotion[0], 0)
+        self.assertEqual(self.board.pending_promotion[1], 0)
+        self.assertEqual(self.board.pending_promotion[2], "w")
+        self.assertEqual(str(self.board.get_piece(0, 0)), "wP")
+
+    def test_promote_method(self):
+        self.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.board.set_piece(1, 0, Pawn("w"))
+        self.board.move_piece((1, 0), (0, 0))
+
+        success = self.board.promote("R")
+
+        self.assertTrue(success)
+        self.assertIsInstance(self.board.get_piece(0, 0), Rook)
+        self.assertEqual(self.board.get_piece(0, 0).color, "w")
+        self.assertIsNone(self.board.pending_promotion)

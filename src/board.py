@@ -1,6 +1,5 @@
 from piece import Pawn, Knight, Bishop, Rook, Queen, King
 
-# Use uppercase for module-level constants
 BOARD_ROWS = 8
 BOARD_COLS = 8
 
@@ -8,6 +7,7 @@ class Board:
     def __init__(self):
         self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)] # [0][0] = a8
         self.en_passant_target = None
+        self.pending_promotion = None
 
     def get_piece(self, row, col):
         return self.grid[row][col]
@@ -44,7 +44,29 @@ class Board:
 
 
     def handle_promotion(self, row, col, piece):
-        self.grid[row][col] = Queen(f"{piece.color}")
+        self.pending_promotion = (row, col, piece.color)
+
+    def promote(self, piece_type):
+        if self.pending_promotion is None:
+            return False
+
+        promotion_map = {
+            "Q": Queen,
+            "R": Rook,
+            "B": Bishop,
+            "N": Knight,
+        }
+
+        piece_class = promotion_map.get(piece_type.upper())
+        if piece_class is None:
+            return False
+
+        row = self.pending_promotion[0]
+        col = self.pending_promotion[1]
+        color = self.pending_promotion[2]
+        self.grid[row][col] = piece_class(color)
+        self.pending_promotion = None
+        return True
 
     def _handle_castling(self, end):
         row = end[0]
@@ -91,3 +113,64 @@ class Board:
         self.grid[0][4] = King("b")
         self.grid[7][4] = King("w")
         ### AI generated code ending
+
+    def is_square_attacked(self, row, col, by_color):
+        grid = self.grid
+
+        pawn_row = row + 1 if by_color == "w" else row - 1
+        if 0 <= pawn_row < 8:
+            for dc in (-1, 1):
+                pawn_col = col + dc
+                if 0 <= pawn_col < 8:
+                    piece = grid[pawn_row][pawn_col]
+                    if isinstance(piece, Pawn) and piece.color == by_color:
+                        return True
+
+        knight_offsets = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+        for dr, dc in knight_offsets:
+            knight_row = row + dr
+            knight_col = col + dc
+            if 0 <= knight_row < 8 and 0 <= knight_col < 8:
+                piece = grid[knight_row][knight_col]
+                if isinstance(piece, Knight) and piece.color == by_color:
+                    return True
+
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                if dr == 0 and dc == 0:
+                    continue
+                king_row = row + dr
+                king_col = col + dc
+                if 0 <= king_row < 8 and 0 <= king_col < 8:
+                    piece = grid[king_row][king_col]
+                    if isinstance(piece, King) and piece.color == by_color:
+                        return True
+
+        orthogonal = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        for dr, dc in orthogonal:
+            r = row + dr
+            c = col + dc
+            while 0 <= r < 8 and 0 <= c < 8:
+                piece = grid[r][c]
+                if piece is None:
+                    r += dr
+                    c += dc
+                    continue
+                if piece.color == by_color and isinstance(piece, (Rook, Queen)):
+                    return True
+                break
+
+        diagonal = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
+        for dr, dc in diagonal:
+            r = row + dr
+            c = col + dc
+            while 0 <= r < 8 and 0 <= c < 8:
+                piece = grid[r][c]
+                if piece is None:
+                    r += dr
+                    c += dc
+                    continue
+                if piece.color == by_color and isinstance(piece, (Bishop, Queen)):
+                    return True
+                break
+        return False

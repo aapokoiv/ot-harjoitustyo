@@ -5,7 +5,7 @@ import subprocess
 @task
 def start(ctx):
     subprocess.run(
-        ["python3", "src/index.py"],
+        ["python3", "src/ui.py"],
         stdin=None,
         stdout=None,
         stderr=None
@@ -26,4 +26,4 @@ def coverage_report(ctx):
 
 @task
 def lint(ctx):
-    ctx.run(f'pylint --rcfile=".pylintrc" --ignore-patterns="index.py" src', pty=True)
+    ctx.run(f'pylint --rcfile=".pylintrc" --ignore-patterns="index.py, ui.py" src', pty=True)

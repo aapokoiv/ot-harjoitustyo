@@ -14,5 +14,8 @@
 | 12.4| 2    | Implemented King class and castling
 | 14.4| 2    | Added en passant and queen promotion to pawn and reformatted the piece classes.
 | 14.4| 2    | Added pylint and fixed errors, made architecture graphs, did some cleanup and testing
+| 20.4| 2    | Started work on Tkinter gui
+| 20.4| 2    | Started implementing check detection
+| 21.4| 3    | Finished Tkinter gui including visible legal moves, options and logic for promotion
 
-|total| 19   |   |
+|total| 26   |   |
