@@ -1,6 +1,11 @@
 from game import Game
 
-def print_board(board):
+def _print_board(board):
+    """Print the board to stdout for the simple CLI.
+
+    This helper is used by main() and is internal to the command-line
+    interface provided by src/index.py.
+    """
     for row in board.grid:
         print(" ".join(str(piece) if piece else "--" for piece in row))
 
@@ -13,7 +18,7 @@ def main():
     print("  q                     -> quit\n")
 
     while True:
-        print_board(game.board)
+        _print_board(game.board)
         print(f"Turn: {game.turn}")
 
         command = input("> ").strip().split()

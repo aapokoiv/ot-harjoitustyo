@@ -3,6 +3,11 @@ from storage import SQLiteStorage
 
 class MoveStorageService:
     def __init__(self, db_path: str = "data/chess.db"):
+        """Service exposing storage operations used by the Game class.
+
+        Args:
+            db_path (str): Path to the SQLite database file.
+        """
         self.storage = SQLiteStorage(db_path=db_path)
 
     def start_game(self, initial_fen: str) -> int:
@@ -25,6 +30,21 @@ class MoveStorageService:
             piece=piece,
             fen_after=fen_after,
             promotion=promotion,
+        )
+
+    def finish_game(
+        self,
+        game_id: int,
+        *,
+        result_type: str,
+        winner: str | None,
+        final_fen: str,
+    ):
+        self.storage.finish_game(
+            game_id=game_id,
+            result_type=result_type,
+            winner=winner,
+            final_fen=final_fen,
         )
 
     def close(self):

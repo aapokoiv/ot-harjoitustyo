@@ -18,7 +18,7 @@ class ChessUI:
 
         self.selected = None
         self.highlighted_moves = set()
-        self.piece_images = self.load_piece_images()
+        self.piece_images = self._load_piece_images()
         self.empty_square_image = tk.PhotoImage(width=60, height=60)
 
         self.status_var = tk.StringVar()
@@ -32,23 +32,23 @@ class ChessUI:
         self.buttons = [[None for _ in range(8)] for _ in range(8)]
         for r in range(8):
             for c in range(8):
-                b = tk.Button(board_frame, command=lambda row=r, col=c: self.on_square_click(row, col))
+                b = tk.Button(board_frame, command=lambda row=r, col=c: self._on_square_click(row, col))
                 b.grid(row=r, column=c)
                 self.buttons[r][c] = b
 
-        restart_btn = tk.Button(self.root, text="Restart", command=self.restart)
+        restart_btn = tk.Button(self.root, text="Restart", command=self._restart)
         restart_btn.grid(row=2, column=0, columnspan=4, sticky="we")
 
         quit_btn = tk.Button(self.root, text="Quit", command=self.root.quit)
         quit_btn.grid(row=2, column=4, columnspan=4, sticky="we")
 
-        self.refresh_board()
+        self._refresh_board()
 
-    def on_square_click(self, row, col):
+    def _on_square_click(self, row, col):
         if self.selected == (row, col):
             self.selected = None
             self.highlighted_moves = set()
-            self.refresh_board()
+            self._refresh_board()
             return
 
         if (row, col) in self.highlighted_moves:
@@ -57,25 +57,30 @@ class ChessUI:
             if not success:
                 messagebox.showinfo("Invalid move", "That move is not valid")
             elif self.game.board.pending_promotion is not None:
-                choice = self.show_promotion_dialog()
+                choice = self._show_promotion_dialog()
                 self.game.complete_promotion(choice)
             self.selected = None
             self.highlighted_moves = set()
-            self.refresh_board()
+            self._refresh_board()
             return
 
         piece, moves = self.game.click_board(row, col)
         if piece is not None and piece.color == self.game.turn:
             self.selected = (row, col)
             self.highlighted_moves = set(moves)
-            self.refresh_board()
+            self._refresh_board()
             return
 
         self.selected = None
         self.highlighted_moves = set()
-        self.refresh_board()
+        self._refresh_board()
 
-    def show_promotion_dialog(self):
+    def _show_promotion_dialog(self):
+        """Show adialog asking user which piece to promote to.
+
+        Returns:
+            str: One-letter promotion code, one of 'Q', 'R', 'B', 'N'.
+        """
         dialog = tk.Toplevel(self.root)
         dialog.title("Choose Promotion")
         dialog.transient(self.root)
@@ -108,7 +113,7 @@ class ChessUI:
         self.root.wait_window(dialog)
         return result.get()
 
-    def refresh_board(self):
+    def _refresh_board(self):
         for r in range(8):
             for c in range(8):
                 btn = self.buttons[r][c]
@@ -132,10 +137,23 @@ class ChessUI:
 
                 btn.config(bg=color, activebackground=color)
 
-        self.status_var.set(f"Turn: {self.game.turn}")
+        self.status_var.set(self._status_text())
+
+    def _status_text(self):
+        result = self.game.result
+        if result is not None:
+            if result["type"] == "checkmate":
+                winner = "White" if result.get("winner") == "w" else "Black"
+                return f"Checkmate! {winner} wins"
+            return "Stalemate! Draw"
+
+        turn = "White" if self.game.turn == "w" else "Black"
+        if self.game.is_current_turn_in_check():
+            return f"Turn: {turn} (Check)"
+        return f"Turn: {turn}"
 
 ### AI generated code starting
-    def load_piece_images(self):
+    def _load_piece_images(self):
         asset_dir = Path(__file__).resolve().parent.parent / "assets"
         file_map = {
             "wK": "Chess_klt60.png",
@@ -161,11 +179,11 @@ class ChessUI:
         return images
 ### AI generated code ending
 
-    def restart(self):
+    def _restart(self):
         self.game = Game()
         self.selected = None
         self.highlighted_moves = set()
-        self.refresh_board()
+        self._refresh_board()
 
     def run(self):
         self.root.mainloop()

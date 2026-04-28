@@ -23,6 +23,8 @@
 | 27.4| 2    | Finished check detection and added GUI chess piece images
 | 28.4| 2    | Connected the database to the main app
 | 28.4| 3    | Finished legal move validation
+| 28.4| 2    | Added game end logic with UI interaction and test for game class
+| 28.4| 3    | Major update on docs, added user-instructions and started doing docstrings
 
 
-|total| 37   |   |
+|total| 44   |   |

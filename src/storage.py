@@ -11,9 +11,8 @@ class SQLiteStorage:
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
-        self.init_db()
 
-    def init_db(self):
+    def _init_db(self):
         schema_path = Path(__file__).with_name("schema.sql")
         schema = schema_path.read_text(encoding="utf-8")
         with self.conn:
@@ -32,6 +31,27 @@ class SQLiteStorage:
             )
             return cursor.lastrowid
 
+    def finish_game(
+        self,
+        game_id: int,
+        *,
+        result_type: str,
+        winner: str | None,
+        final_fen: str,
+    ):
+        with self.conn:
+            self.conn.execute(
+                """
+                UPDATE games
+                SET result_type = ?,
+                    winner = ?,
+                    final_fen = ?,
+                    ended_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (result_type, winner, final_fen, game_id),
+            )
+
     def store_move(
         self,
         game_id: int,
@@ -44,7 +64,7 @@ class SQLiteStorage:
     ) -> int:
         from_row, from_col = start
         to_row, to_col = end
-        ply = self.last_ply(game_id) + 1
+        ply = self._last_ply(game_id) + 1
 
         with self.conn:
             cursor = self.conn.execute(
@@ -70,7 +90,7 @@ class SQLiteStorage:
             )
             return cursor.lastrowid
 
-    def last_ply(self, game_id: int) -> int:
+    def _last_ply(self, game_id: int) -> int:
         row = self.conn.execute(
             "SELECT COALESCE(MAX(ply), 0) AS max_ply FROM moves WHERE game_id = ?",
             (game_id,),

@@ -5,8 +5,7 @@ With this application you can play 2-player chess locally on the same computer.
 The application will include a graphical chess board.
 
 ## Users
-For the start there is a plan to have only one type of user. Might consider adding
-an option for signing in at some point.
+There is currently only one type of user.
 
 ## Core features
 ### The player can
@@ -16,23 +15,21 @@ an option for signing in at some point.
   - Player can move a piece by clicking it and a square the piece can move to :white_check_mark:
 
 ### The application will
-- Validate played moves
-  - The app will block illegal moves 
-  - Illegal move will result in a notification and the game continuing
-- Recognize when the game ends either in checkmate or stalemate
+- Validate played moves :white_check_mark:
+  - The app will block illegal moves :white_check_mark:
+- Recognize when the game ends either in checkmate or stalemate :white_check_mark:
 - Manage turns between white and black :white_check_mark:
 
 
 ## Future feature ideas
 - Chess clocks for both sides
   - Players can choose different time constraints for a game
-- GUI shows legal moves when clicking a piece
+- GUI shows legal moves when clicking a piece :white_check_mark:
 - GUI shows list of played moves
   - Player can review previous positions through the list
 - Players can configure custom chess position and play from there 
 - Sound effects
   - Check 
-  - Illegal move
   - Moving a piece
 - Game history
   - Full move history

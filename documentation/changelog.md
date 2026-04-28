@@ -25,4 +25,8 @@
 - Finished check detection
 - Finished full legal move validation
 - Added chess piece images to GUI 
+- Started doing docstrings for important things
+- Added logic and GUI info for when the game ends
+- Added tests for game class
+- Updated architecture doc, added user instructions and updated most docs
 

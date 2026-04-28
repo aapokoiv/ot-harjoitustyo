@@ -1,3 +1,9 @@
+"""FEN to board state and back conversion
+
+This module converts between the internal board representation and
+Forsyth-Edwards Notation (FEN)
+"""
+
 from piece import Pawn, Knight, Bishop, Rook, Queen, King
 
 ### The code in this file is mostly done with ai
@@ -22,6 +28,21 @@ FEN_TO_PIECE = {
 
 
 def board_to_fen(board, side_to_move, halfmove_clock=0, fullmove_number=1):
+    """Convert a Board instance into a FEN string.
+
+    Args:
+        board: Board-like object with a grid, en_passant_target and piece
+        instances compatible with the PIECE_TO_FEN mapping.
+        side_to_move (str): 'w' or 'b' indicating which side is to move.
+        halfmove_clock (int): Fifty-move rule counter.
+        fullmove_number (int): Full move counter.
+
+    Returns:
+        str: FEN formatted string representing the board state.
+
+    Raises:
+        ValueError: If side_to_move is not 'w' or 'b'.
+    """
     ranks = []
     for row in board.grid:
         empty_count = 0
@@ -47,7 +68,7 @@ def board_to_fen(board, side_to_move, halfmove_clock=0, fullmove_number=1):
         raise ValueError("side_to_move must be 'w' or 'b'")
 
     castling = _get_castling_rights(board)
-    en_passant = coords_to_algebraic(board.en_passant_target)
+    en_passant = _coords_to_algebraic(board.en_passant_target)
 
     return (
         f"{'/'.join(ranks)} {side_to_move} {castling} "
@@ -61,11 +82,29 @@ def board_from_fen(
     board_rows=8,
     board_cols=8,
 ):
+    """Create a Board instance from a FEN string.
+
+    Args:
+        fen (str): FEN string with six fields (piece placement, active color,
+        castling availability, en-passant square, halfmove clock, fullmove number).
+        board_cls: Board class to instantiate for the parsed board.
+        board_rows (int): Number of rows expected (default 8).
+        board_cols (int): Number of columns expected (default 8).
+
+    Returns:
+        board_cls: An instance of board_cls representing the FEN state.
+
+    Raises:
+        ValueError: If the FEN string is malformed.
+    """
     parts = fen.strip().split()
     if len(parts) != 6:
         raise ValueError("Invalid FEN: expected 6 fields")
 
-    placement, _, castling, en_passant, _, _ = parts
+    placement = parts[0]
+    castling = parts[2]
+    en_passant = parts[3]
+
     ranks = placement.split("/")
     if len(ranks) != 8:
         raise ValueError("Invalid FEN: expected 8 ranks")
@@ -74,32 +113,41 @@ def board_from_fen(
     board.grid = [[None for _ in range(board_cols)] for _ in range(board_rows)]
 
     for row_idx, rank in enumerate(ranks):
-        col_idx = 0
-        for char in rank:
-            if char.isdigit():
-                col_idx += int(char)
-                continue
+        _populate_board_row(board.grid[row_idx], rank)
 
-            piece_class = FEN_TO_PIECE.get(char.lower())
-            if piece_class is None:
-                raise ValueError("Invalid FEN: unknown piece symbol")
-
-            piece_color = "w" if char.isupper() else "b"
-            piece = piece_class(piece_color)
-
-            if isinstance(piece, (King, Rook)):
-                piece.has_moved = True
-
-            board.grid[row_idx][col_idx] = piece
-            col_idx += 1
-
-        if col_idx != 8:
-            raise ValueError("Invalid FEN: rank does not contain 8 files")
-
-    board.en_passant_target = None if en_passant == "-" else algebraic_to_coords(en_passant)
+    board.en_passant_target = None if en_passant == "-" else _algebraic_to_coords(en_passant)
     board.pending_promotion = None
     _apply_castling_rights(board, castling)
     return board
+
+
+def _populate_board_row(board_row, rank):
+    col_idx = 0
+
+    for char in rank:
+        if char.isdigit():
+            col_idx += int(char)
+            continue
+
+        board_row[col_idx] = _piece_from_fen_symbol(char)
+        col_idx += 1
+
+    if col_idx != 8:
+        raise ValueError("Invalid FEN: rank does not contain 8 files")
+
+
+def _piece_from_fen_symbol(char):
+    piece_class = FEN_TO_PIECE.get(char.lower())
+    if piece_class is None:
+        raise ValueError("Invalid FEN: unknown piece symbol")
+
+    piece_color = "w" if char.isupper() else "b"
+    piece = piece_class(piece_color)
+
+    if isinstance(piece, (King, Rook)):
+        piece.has_moved = True
+
+    return piece
 
 
 def _get_castling_rights(board):
@@ -170,7 +218,7 @@ def _apply_castling_rights(board, castling_rights):
         black_rook_q.has_moved = "q" not in castling_rights
 
 
-def coords_to_algebraic(coords):
+def _coords_to_algebraic(coords):
     if coords is None:
         return "-"
     row, col = coords
@@ -179,7 +227,7 @@ def coords_to_algebraic(coords):
     return f"{file_char}{rank_char}"
 
 
-def algebraic_to_coords(square):
+def _algebraic_to_coords(square):
     if len(square) != 2:
         raise ValueError("Invalid en-passant target in FEN")
 

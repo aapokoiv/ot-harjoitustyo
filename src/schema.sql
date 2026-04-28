@@ -3,7 +3,11 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS games (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  initial_fen TEXT NOT NULL
+  initial_fen TEXT NOT NULL,
+  result_type TEXT,
+  winner CHAR(1),
+  final_fen TEXT,
+  ended_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS moves (

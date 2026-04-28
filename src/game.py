@@ -3,7 +3,20 @@ from piece import Pawn, King
 from service import MoveStorageService
 
 class Game:
+    """Manages the game coordinating board state and move persistence.
+
+    The Game class owns a :class:`Board` and enforces move legality, turn
+    progression, and persistence of moves via a MoveStorageService.
+    """
+
     def __init__(self, storage_service=MoveStorageService()):
+        """Create a new game instance.
+
+        Args:
+            storage_service (MoveStorageService): Service used to persist game
+                start, moves and final result. A default instance is created
+                when omitted.
+        """
         self.board = Board()
         self.turn = "w"
         self.result = None
@@ -18,6 +31,18 @@ class Game:
         self._update_turn_state()
 
     def make_move(self, start, end):
+        """Attempt to make a move from start to end for the current player.
+
+        Args:
+            start (tuple[int, int]): (row, col) coordinates of the source square.
+            end (tuple[int, int]): (row, col) coordinates of the destination square.
+
+        Returns:
+            bool: True if the move was executed (or a promotion was set), False
+                if the move is illegal or the game is already finished or a
+                promotion is pending.
+        """
+
         if self.result is not None or self.board.pending_promotion is not None:
             return False
 
@@ -49,6 +74,16 @@ class Game:
         return True
 
     def complete_promotion(self, piece_type):
+        """Complete a pending pawn promotion.
+
+        Args:
+            piece_type (str): One-letter code for the promotion piece (Q,R,B,N).
+
+        Returns:
+            bool: True if the promotion succeeded and the turn was switched,
+                False if there was no pending promotion or the piece type was invalid.
+        """
+
         if self.board.pending_promotion is None:
             return False
 
@@ -63,6 +98,18 @@ class Game:
         return True
 
     def click_board(self, row, col):
+        """Return the piece on a square and its legal moves for the current turn.
+
+        Args:
+            row (int): Row index of the square.
+            col (int): Column index of the square.
+
+        Returns:
+            tuple: (piece, legal_moves) where piece is the piece instance or
+                None and legal_moves is a list of (row, col) destinations that
+                are legal for the current player.
+        """
+
         piece = self.board.get_piece(row, col)
 
         if self.result is not None or self.board.pending_promotion is not None:
@@ -81,13 +128,27 @@ class Game:
         return piece, legal_moves
 
     def is_move_legal(self, start, end, color):
+        """Return True if a particular move is legal for a given color.
+
+        The legality checks include basic move generation for the piece,
+        ensuring the destination is not occupied by a king, castling rules,
+        and verifying the move does not leave the player's own king in 
+        check by simulating the move on a cloned board.
+
+        Args:
+            start (tuple[int, int]): Source square coordinates.
+            end (tuple[int, int]): Destination square coordinates.
+            color (str): 'w' or 'b' for the side attempting the move.
+
+        Returns:
+            bool: True if the move is legal, False otherwise.
+        """
+
         if self.result is not None or self.board.pending_promotion is not None:
             return False
 
         piece = self.board.get_piece(start[0], start[1])
-        if piece is None:
-            return False
-        if piece.color != color:
+        if piece is None or piece.color != color:
             return False
 
         moves = piece.get_moves(start, self.board)
@@ -115,6 +176,14 @@ class Game:
         return isinstance(piece, King) and start[0] == end[0] and abs(start[1] - end[1]) == 2
 
     def switch_turn(self):
+        """Advance the game to the next player's turn.
+
+        If there is a recorded last move context, this method updates the
+        halfmove clock, fullmove number, persists the move via the storage
+        service, and updates check/checkmate/stalemate state. When called with
+        no context it simply flips the active player.
+        """
+
         if self.last_move_context is None:
             self.turn = "b" if self.turn == "w" else "w"
             self._update_turn_state()
@@ -145,6 +214,15 @@ class Game:
         self.last_move_context = None
         self._update_turn_state()
 
+        if self.result is not None:
+            final_fen = self.board.to_fen(self.turn, self.halfmove_clock, self.fullmove_number)
+            self.storage_service.finish_game(
+                self.game_id,
+                result_type=self.result["type"],
+                winner=self.result.get("winner"),
+                final_fen=final_fen,
+            )
+
     def _has_any_legal_move(self, color):
         for start, moves in self._iter_piece_moves(color):
             for move in moves:
@@ -167,6 +245,11 @@ class Game:
         return self.board.is_king_in_check(self.turn)
 
     def winner(self):
+        """Return the winner of the game if the game is finished.
+
+        Returns:
+            str | None: 'w' or 'b' if there is a winner, otherwise None.
+        """
         if self.result is None:
             return None
         return self.result.get("winner")

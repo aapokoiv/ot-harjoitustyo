@@ -5,7 +5,19 @@ BOARD_ROWS = 8
 BOARD_COLS = 8
 
 class Board:
+    """Representation of an 8x8 chess board.
+
+    The board stores pieces in a rows, colums 2D list where [0][0] corresponds
+    to a8 in algebraic notation. Public methods of this class provide the
+    operations needed by the game logic.
+    """
+
     def __init__(self):
+        """Create an empty board.
+
+        The board is initialised empty; call set_starting_position to place
+        pieces for a new game.
+        """
         self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)]  # [0][0] = a8
         self.en_passant_target = None
         self.pending_promotion = None
@@ -34,6 +46,15 @@ class Board:
         )
 
     def clone(self):
+        """Create a copy of the board for move simulation.
+
+        The returned Board contains new piece instances with the same type and
+        color. Mutable piece attributes used by rules. The copy is used in the
+        simulation of moves when checking the legal moves.
+
+        Returns:
+            Board: A new Board instance representing the same state.
+        """
         board_copy = Board()
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -87,9 +108,9 @@ class Board:
                 self.en_passant_target = (5, end[1])
 
         if isinstance(piece, Pawn) and (end[0] == 0 or end[0] == 7):
-            self.handle_promotion(end[0], end[1], piece)
+            self._handle_promotion(end[0], end[1], piece)
 
-    def handle_promotion(self, row, col, piece):
+    def _handle_promotion(self, row, col, piece):
         self.pending_promotion = (row, col, piece.color)
 
     def promote(self, piece_type):
@@ -130,10 +151,11 @@ class Board:
                 rook.has_moved = True
 
     def set_starting_position(self):
-        self.grid = [[None for _ in range(8)] for _ in range(8)]
-        self.en_passant_target = None
-        self.pending_promotion = None
+        """Place pieces for the standard starting chess position.
 
+        This mutates the board in-place and is typically called once when a
+        new game is created.
+        """
         for col in range(8):
             self.grid[1][col] = Pawn("b")
             self.grid[6][col] = Pawn("w")
@@ -160,7 +182,7 @@ class Board:
         self.grid[7][4] = King("w")
 
 
-    def find_king(self, color):
+    def _find_king(self, color):
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
                 piece = self.grid[row][col]
@@ -169,7 +191,18 @@ class Board:
         return None
 
     def is_king_in_check(self, color):
-        king_pos = self.find_king(color)
+        """Return True if the king of the given color is in check.
+
+        Args:
+            color (str): 'w' or 'b' representing the king to check.
+
+        Returns:
+            bool: True if the king is attacked by any opposing piece.
+
+        Raises:
+            ValueError: If the king cannot be found on the board.
+        """
+        king_pos = self._find_king(color)
         if king_pos is None:
             raise ValueError(f"King not found for color {color}")
 
