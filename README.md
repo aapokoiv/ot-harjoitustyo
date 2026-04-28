@@ -20,7 +20,7 @@ The app provides a GUI that you can play the game from.
 
 ## Latest release
 
-[Latest release](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko5)
+[Latest release](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko6)
 
 ## Installation
 
