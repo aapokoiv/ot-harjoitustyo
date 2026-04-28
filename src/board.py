@@ -159,6 +159,23 @@ class Board:
         self.grid[0][4] = King("b")
         self.grid[7][4] = King("w")
 
+
+    def find_king(self, color):
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                piece = self.grid[row][col]
+                if isinstance(piece, King) and piece.color == color:
+                    return (row, col)
+        return None
+
+    def is_king_in_check(self, color):
+        king_pos = self.find_king(color)
+        if king_pos is None:
+            raise ValueError(f"King not found for color {color}")
+
+        opponent_color = "b" if color == "w" else "w"
+        return self.is_square_attacked(king_pos[0], king_pos[1], opponent_color)
+
     def is_square_attacked(self, row, col, by_color):
         return (
             self._pawn_attacks(row, col, by_color)

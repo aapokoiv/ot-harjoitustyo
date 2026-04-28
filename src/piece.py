@@ -164,13 +164,13 @@ class King(Piece):
 
         if not self.has_moved:
             rook = grid[row][7]
-            if (rook is not None and rook.color == self.color
+            if (rook is not None and rook.color == self.color and isinstance(rook, Rook)
                     and not getattr(rook, "has_moved")):
                 if grid[row][5] is None and grid[row][6] is None:
                     moves.append((row, 6))
 
             rook_q = grid[row][0]
-            if (rook_q is not None and rook_q.color == self.color
+            if (rook_q is not None and rook_q.color == self.color and isinstance(rook_q, Rook)
                     and not getattr(rook_q, "has_moved")):
                 if grid[row][1] is None and grid[row][2] is None and grid[row][3] is None:
                     moves.append((row, 2))

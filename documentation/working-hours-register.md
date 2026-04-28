@@ -20,6 +20,9 @@
 | 21.4| 2    | Added fen <-> board conversion for db storage and future move validation.
 | 21.4| 2    | Started work on the db initialization
 | 21.4| 2    | Updated documentation and made sequence graphs
+| 27.4| 2    | Finished check detection and added GUI chess piece images
+| 28.4| 2    | Connected the database to the main app
+| 28.4| 3    | Finished legal move validation
 
 
-|total| 32   |   |
+|total| 37   |   |

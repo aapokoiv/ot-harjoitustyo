@@ -19,3 +19,10 @@
 - Started the work on check detection and move validation
 - Added fen conversions for the board state.
 - Made sequence graphs for core parts of the project.
+
+## Week 6 
+- Connected database to apps core workflow
+- Finished check detection
+- Finished full legal move validation
+- Added chess piece images to GUI 
+

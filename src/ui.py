@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from pathlib import Path
 from game import Game
 
 
@@ -17,6 +18,8 @@ class ChessUI:
 
         self.selected = None
         self.highlighted_moves = set()
+        self.piece_images = self.load_piece_images()
+        self.empty_square_image = tk.PhotoImage(width=60, height=60)
 
         self.status_var = tk.StringVar()
         self.status_var.set(f"Turn: {self.game.turn}")
@@ -29,7 +32,7 @@ class ChessUI:
         self.buttons = [[None for _ in range(8)] for _ in range(8)]
         for r in range(8):
             for c in range(8):
-                b = tk.Button(board_frame, width=6, height=3, command=lambda row=r, col=c: self.on_square_click(row, col))
+                b = tk.Button(board_frame, command=lambda row=r, col=c: self.on_square_click(row, col))
                 b.grid(row=r, column=c)
                 self.buttons[r][c] = b
 
@@ -110,8 +113,14 @@ class ChessUI:
             for c in range(8):
                 btn = self.buttons[r][c]
                 piece = self.game.board.get_piece(r, c)
-                text = str(piece) if piece else ""
-                btn.config(text=text)
+                piece_key = str(piece) if piece else ""
+                image = self.piece_images.get(piece_key)
+                if piece is None:
+                    btn.config(image=self.empty_square_image, text="")
+                elif image is not None:
+                    btn.config(image=image, text="")
+                else:
+                    btn.config(image=self.empty_square_image, text=piece_key, compound="center")
 
                 base = self.LIGHT_COLOR if (r + c) % 2 == 0 else self.DARK_COLOR
                 color = base
@@ -124,6 +133,33 @@ class ChessUI:
                 btn.config(bg=color, activebackground=color)
 
         self.status_var.set(f"Turn: {self.game.turn}")
+
+### AI generated code starting
+    def load_piece_images(self):
+        asset_dir = Path(__file__).resolve().parent.parent / "assets"
+        file_map = {
+            "wK": "Chess_klt60.png",
+            "bK": "Chess_kdt60.png",
+            "wQ": "Chess_qlt60.png",
+            "bQ": "Chess_qdt60.png",
+            "wR": "Chess_rlt60.png",
+            "bR": "Chess_rdt60.png",
+            "wB": "Chess_blt60.png",
+            "bB": "Chess_bdt60.png",
+            "wN": "Chess_nlt60.png",
+            "bN": "Chess_ndt60.png",
+            "wP": "Chess_plt60.png",
+            "bP": "Chess_pdt60.png",
+        }
+
+        images = {}
+        for piece_key, filename in file_map.items():
+            file_path = asset_dir / filename
+            if file_path.exists():
+                images[piece_key] = tk.PhotoImage(file=str(file_path))
+
+        return images
+### AI generated code ending
 
     def restart(self):
         self.game = Game()
