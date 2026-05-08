@@ -9,11 +9,11 @@ class Game:
     progression, and persistence of moves via a MoveStorageService.
     """
 
-    def __init__(self, storage_service=MoveStorageService()):
+    def __init__(self, storage_service=None):
         """Create a new game instance.
 
         Args:
-            storage_service (MoveStorageService): Service used to persist game
+            storage_service (MoveStorageService | None): Service used to persist game
                 start, moves and final result. A default instance is created
                 when omitted.
         """
@@ -24,7 +24,7 @@ class Game:
         self.fullmove_number = 1
         self.last_move_context = None
         self.board.set_starting_position()
-        self.storage_service = storage_service
+        self.storage_service = storage_service or MoveStorageService()
 
         initial_fen = self.board.to_fen(self.turn, self.halfmove_clock, self.fullmove_number)
         self.game_id = self.storage_service.start_game(initial_fen)

@@ -2,11 +2,12 @@ from storage import SQLiteStorage
 
 
 class MoveStorageService:
-    def __init__(self, db_path: str = "data/chess.db"):
+    def __init__(self, db_path: str | None = None):
         """Service exposing storage operations used by the Game class.
 
         Args:
-            db_path (str): Path to the SQLite database file.
+            db_path (str | None): Path to the SQLite database file.
+                If None, CHESS_DB_PATH or the project default is used.
         """
         self.storage = SQLiteStorage(db_path=db_path)
 

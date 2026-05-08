@@ -1,22 +1,32 @@
+import os
 from pathlib import Path
 import sqlite3
 
 
-class SQLiteStorage:
-    def __init__(self, db_path: str = "data/chess.db"):
-        self.db_path = db_path
-        if db_path != ":memory:":
-            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "chess.db"
 
-        self.conn = sqlite3.connect(db_path)
+
+class SQLiteStorage:
+    def __init__(self, db_path: str | None = None):
+        resolved_db_path = db_path or os.getenv("CHESS_DB_PATH") or str(DEFAULT_DB_PATH)
+
+        if resolved_db_path != ":memory:":
+            Path(resolved_db_path).parent.mkdir(parents=True, exist_ok=True)
+
+        self.db_path = resolved_db_path
+        self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
+        self.ensure_schema()
 
     def _init_db(self):
         schema_path = Path(__file__).with_name("schema.sql")
         schema = schema_path.read_text(encoding="utf-8")
         with self.conn:
             self.conn.executescript(schema)
+
+    def ensure_schema(self):
+        self._init_db()
 
     def close(self):
         if getattr(self, "conn", None) is not None:
