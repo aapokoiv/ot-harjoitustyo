@@ -1,12 +1,13 @@
 import unittest
 
 from game import Game
-from piece import King, Pawn, Queen, Rook
+from piece import Bishop, King, Knight, Pawn, Queen, Rook
 
 
 class FakeStorageService:
     def __init__(self):
         self.saved_moves = []
+        self.finished_games = []
 
     def start_game(self, _initial_fen):
         return 1
@@ -14,6 +15,9 @@ class FakeStorageService:
     def save_move(self, *args, **kwargs):
         self.saved_moves.append({"args": args, "kwargs": kwargs})
         return 1
+
+    def finish_game(self, *args, **kwargs):
+        self.finished_games.append({"args": args, "kwargs": kwargs})
 
 
 class TestGame(unittest.TestCase):
@@ -205,6 +209,86 @@ class TestGame(unittest.TestCase):
         self.assertEqual(self.game.turn, "w")
         self.assertEqual(self.game.halfmove_clock, 11)
         self.assertEqual(self.game.fullmove_number, 5)
+
+    def test_draw_by_fifty_move_rule_is_detected_automatically(self):
+        self.game.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.game.board.set_piece(7, 4, King("w"))
+        self.game.board.set_piece(0, 4, King("b"))
+        self.game.board.set_piece(7, 0, Rook("w"))
+        self.game.board.set_piece(0, 7, Rook("b"))
+        self.game.turn = "w"
+        self.game.halfmove_clock = 99
+        self.game.result = None
+        self.game.board.position_counts = {}
+        self.game._record_current_position()
+
+        self.assertTrue(self.game.make_move((7, 0), (6, 0)))
+
+        self.assertEqual(self.game.result, {"type": "fifty_move_rule"})
+        self.assertEqual(len(self.storage_service.finished_games), 1)
+        self.assertEqual(
+            self.storage_service.finished_games[0]["kwargs"]["result_type"],
+            "fifty_move_rule",
+        )
+
+    def test_draw_by_threefold_repetition_is_detected_automatically(self):
+        self.game.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.game.board.set_piece(7, 4, King("w"))
+        self.game.board.set_piece(0, 4, King("b"))
+        self.game.board.set_piece(7, 6, Knight("w"))
+        self.game.board.set_piece(0, 6, Knight("b"))
+        self.game.turn = "w"
+        self.game.result = None
+        self.game.halfmove_clock = 0
+        self.game.fullmove_number = 1
+        self.game.board.position_counts = {}
+        self.game._record_current_position()
+
+        cycle = [
+            ((7, 6), (5, 5)),
+            ((0, 6), (2, 5)),
+            ((5, 5), (7, 6)),
+            ((2, 5), (0, 6)),
+        ]
+
+        for _ in range(2):
+            for start, end in cycle:
+                self.assertTrue(self.game.make_move(start, end))
+
+        self.assertEqual(self.game.result, {"type": "threefold_repetition"})
+        self.assertEqual(len(self.storage_service.finished_games), 1)
+        self.assertEqual(
+            self.storage_service.finished_games[0]["kwargs"]["result_type"],
+            "threefold_repetition",
+        )
+
+    def test_draw_by_insufficient_material_is_detected(self):
+        self.game.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.game.board.set_piece(7, 4, King("w"))
+        self.game.board.set_piece(0, 4, King("b"))
+        self.game.turn = "w"
+        self.game.result = None
+        self.game.board.position_counts = {}
+        self.game._record_current_position()
+
+        self.game._update_turn_state()
+
+        self.assertEqual(self.game.result, {"type": "insufficient_material"})
+
+    def test_not_insufficient_material_with_bishop_and_knight(self):
+        self.game.board.grid = [[None for _ in range(8)] for _ in range(8)]
+        self.game.board.set_piece(7, 4, King("w"))
+        self.game.board.set_piece(0, 4, King("b"))
+        self.game.board.set_piece(6, 2, Bishop("w"))
+        self.game.board.set_piece(6, 5, Knight("w"))
+        self.game.turn = "w"
+        self.game.result = None
+        self.game.board.position_counts = {}
+        self.game._record_current_position()
+
+        self.game._update_turn_state()
+
+        self.assertIsNone(self.game.result)
 
 if __name__ == "__main__":
     unittest.main()

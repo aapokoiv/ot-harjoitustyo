@@ -30,3 +30,8 @@
 - Added tests for game class
 - Updated architecture doc, added user instructions and updated most docs
 
+## Week 7
+- Fixed the db initialization bug and made the system more robust.
+- Added logic for multiple different draw situations.
+- Added chess clock logic 
+- Added logic and db changes for game review and pause/continue functionality

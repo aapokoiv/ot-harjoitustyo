@@ -33,13 +33,40 @@ class SQLiteStorage:
             self.conn.close()
             self.conn = None
 
-    def create_game(self, initial_fen: str) -> int:
+    def create_game(
+        self,
+        initial_fen: str,
+        *,
+        clock_enabled: bool = False,
+        initial_seconds: int | None = None,
+        increment_seconds: int = 0,
+        white_time_ms: int | None = None,
+        black_time_ms: int | None = None,
+    ) -> int:
         with self.conn:
             cursor = self.conn.execute(
-                "INSERT INTO games (initial_fen) VALUES (?)",
-                (initial_fen,),
-            )
-            return cursor.lastrowid
+                """
+                INSERT INTO games (
+                    initial_fen,
+                    clock_enabled,
+                    initial_seconds,
+                    increment_seconds,
+                    white_time_ms,
+                    black_time_ms,
+                    status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    initial_fen,
+                    1 if clock_enabled else 0,
+                    initial_seconds,
+                    increment_seconds,
+                    white_time_ms,
+                    black_time_ms,
+                    "ongoing",
+                ),
+        )
+        return cursor.lastrowid
 
     def finish_game(
         self,
@@ -56,22 +83,26 @@ class SQLiteStorage:
                 SET result_type = ?,
                     winner = ?,
                     final_fen = ?,
-                    ended_at = CURRENT_TIMESTAMP
+                    ended_at = CURRENT_TIMESTAMP,
+                    status = 'finished'
                 WHERE id = ?
                 """,
                 (result_type, winner, final_fen, game_id),
             )
-
-    def store_move(
-        self,
-        game_id: int,
-        *,
-        start: tuple[int, int],
-        end: tuple[int, int],
-        piece: str,
-        fen_after: str,
-        promotion: str | None = None,
-    ) -> int:
+    def update_game_clock(self, game_id: int, *, white_time_ms: int, black_time_ms: int):
+        with self.conn:
+            self.conn.execute(
+                """
+                UPDATE games
+                SET white_time_ms = ?,
+                    black_time_ms = ?
+                WHERE id = ?
+                """,
+                (white_time_ms, black_time_ms, game_id),
+            )
+    def store_move(self, game_id: int, move_data: dict) -> int:
+        start = move_data["start"]
+        end = move_data["end"]
         from_row, from_col = start
         to_row, to_col = end
         ply = self._last_ply(game_id) + 1
@@ -83,8 +114,11 @@ class SQLiteStorage:
                     game_id, ply,
                     from_row, from_col, to_row, to_col,
                     piece, promotion,
+                    san,
+                    white_time_ms, black_time_ms,
+                    elapsed_ms,
                     fen_after
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     game_id,
@@ -93,12 +127,117 @@ class SQLiteStorage:
                     from_col,
                     to_row,
                     to_col,
-                    piece,
-                    promotion,
-                    fen_after,
+                    move_data["piece"],
+                    move_data.get("promotion"),
+                    move_data.get("san"),
+                    move_data.get("white_time_ms"),
+                    move_data.get("black_time_ms"),
+                    move_data.get("elapsed_ms"),
+                    move_data["fen_after"],
                 ),
             )
             return cursor.lastrowid
+
+    def list_games(
+        self,
+        *,
+        limit: int = 50,
+        include_ongoing: bool = True,
+        sort_desc: bool = True,
+    ):
+        order = "DESC" if sort_desc else "ASC"
+        status_filter = "" if include_ongoing else "WHERE g.status = 'finished'"
+        rows = self.conn.execute(
+            f"""
+            SELECT
+                g.*,
+                COALESCE(m.move_count, 0) AS move_count,
+                CASE
+                    WHEN g.ended_at IS NULL THEN NULL
+                    ELSE CAST((julianday(g.ended_at) - julianday(g.created_at)) * 86400 AS INTEGER)
+                END AS duration_seconds
+            FROM games g
+            LEFT JOIN (
+                SELECT game_id, COUNT(*) AS move_count
+                FROM moves
+                GROUP BY game_id
+            ) m ON g.id = m.game_id
+            {status_filter}
+            ORDER BY g.created_at {order}, g.id {order}
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_game(self, game_id: int):
+        row = self.conn.execute(
+            """
+            SELECT
+                g.*,
+                COALESCE((SELECT COUNT(*) FROM moves WHERE game_id = g.id), 0) AS move_count
+            FROM games g
+            WHERE g.id = ?
+            """,
+            (game_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
+    def get_moves(self, game_id: int):
+        rows = self.conn.execute(
+            """
+            SELECT
+                id,
+                game_id,
+                ply,
+                from_row,
+                from_col,
+                to_row,
+                to_col,
+                piece,
+                promotion,
+                san,
+                white_time_ms,
+                black_time_ms,
+                elapsed_ms,
+                fen_after,
+                created_at
+            FROM moves
+            WHERE game_id = ?
+            ORDER BY ply ASC
+            """,
+            (game_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_latest_snapshot(self, game_id: int):
+        move_row = self.conn.execute(
+            """
+            SELECT ply, fen_after
+            FROM moves
+            WHERE game_id = ?
+            ORDER BY ply DESC
+            LIMIT 1
+            """,
+            (game_id,),
+        ).fetchone()
+        if move_row is not None:
+            return {
+                "ply": int(move_row["ply"]),
+                "fen": move_row["fen_after"],
+            }
+        game_row = self.conn.execute(
+            "SELECT initial_fen FROM games WHERE id = ?",
+            (game_id,),
+        ).fetchone()
+        if game_row is None:
+            return None
+        return {
+            "ply": 0,
+            "fen": game_row["initial_fen"],
+        }
 
     def _last_ply(self, game_id: int) -> int:
         row = self.conn.execute(

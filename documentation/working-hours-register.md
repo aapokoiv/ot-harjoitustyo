@@ -25,6 +25,9 @@
 | 28.4| 3    | Finished legal move validation
 | 28.4| 2    | Added game end logic with UI interaction and test for game class
 | 28.4| 3    | Major update on docs, added user-instructions and started doing docstrings
+| 8.5 | 2    | Fixed db init bug, improved the db connection setup and tested the app
+| 9.5 | 3    | Implemented the missing logic for draws in different special cases
+| 9.5 | 3    | Implemented the logic and db changes for chess clock
+| 9.5 | 3    | Storing extra information and some logic changes for being able to pause/continue and review games
 
-
-|total| 44   |   |
+|total| 55   |   |

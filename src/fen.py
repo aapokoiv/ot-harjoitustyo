@@ -75,6 +75,55 @@ def board_to_fen(board, side_to_move, halfmove_clock=0, fullmove_number=1):
         f"{en_passant} {halfmove_clock} {fullmove_number}"
     )
 
+def parse_fen(
+    fen,
+    board_cls,
+    board_rows=8,
+    board_cols=8,
+):
+    """Parse FEN into board and turn counters.
+    Returns a dict with keys: board, side_to_move, halfmove_clock,
+    fullmove_number.
+    """
+    parts = fen.strip().split()
+    if len(parts) != 6:
+        raise ValueError("Invalid FEN: expected 6 fields")
+
+    placement = parts[0]
+    side_to_move = parts[1]
+    castling = parts[2]
+    en_passant = parts[3]
+
+    if side_to_move not in {"w", "b"}:
+        raise ValueError("Invalid FEN: active color must be 'w' or 'b'")
+
+    try:
+        halfmove_clock = int(parts[4])
+        fullmove_number = int(parts[5])
+    except ValueError as exc:
+        raise ValueError("Invalid FEN: move counters must be integers") from exc
+
+    if halfmove_clock < 0 or fullmove_number < 1:
+        raise ValueError("Invalid FEN: move counters out of range")
+    ranks = placement.split("/")
+
+    if len(ranks) != board_rows:
+        raise ValueError(f"Invalid FEN: expected {board_rows} ranks")
+
+    board = board_cls()
+    for row_idx, rank in enumerate(ranks):
+        _populate_board_row(board.grid[row_idx], rank)
+
+    board.en_passant_target = None if en_passant == "-" else _algebraic_to_coords(en_passant)
+    board.pending_promotion = None
+    _apply_castling_rights(board, castling)
+
+    return {
+        "board": board,
+        "side_to_move": side_to_move,
+        "halfmove_clock": halfmove_clock,
+        "fullmove_number": fullmove_number,
+    }
 
 def board_from_fen(
     fen,
@@ -97,29 +146,13 @@ def board_from_fen(
     Raises:
         ValueError: If the FEN string is malformed.
     """
-    parts = fen.strip().split()
-    if len(parts) != 6:
-        raise ValueError("Invalid FEN: expected 6 fields")
-
-    placement = parts[0]
-    castling = parts[2]
-    en_passant = parts[3]
-
-    ranks = placement.split("/")
-    if len(ranks) != 8:
-        raise ValueError("Invalid FEN: expected 8 ranks")
-
-    board = board_cls()
-    board.grid = [[None for _ in range(board_cols)] for _ in range(board_rows)]
-
-    for row_idx, rank in enumerate(ranks):
-        _populate_board_row(board.grid[row_idx], rank)
-
-    board.en_passant_target = None if en_passant == "-" else _algebraic_to_coords(en_passant)
-    board.pending_promotion = None
-    _apply_castling_rights(board, castling)
-    return board
-
+    state = parse_fen(
+        fen=fen,
+        board_cls=board_cls,
+        board_rows=board_rows,
+        board_cols=board_cols,
+    )
+    return state["board"]
 
 def _populate_board_row(board_row, rank):
     col_idx = 0

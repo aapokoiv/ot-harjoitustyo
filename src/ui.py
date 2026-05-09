@@ -39,8 +39,9 @@ class ChessUI:
         restart_btn = tk.Button(self.root, text="Restart", command=self._restart)
         restart_btn.grid(row=2, column=0, columnspan=4, sticky="we")
 
-        quit_btn = tk.Button(self.root, text="Quit", command=self.root.quit)
+        quit_btn = tk.Button(self.root, text="Quit", command=self._quit_game)
         quit_btn.grid(row=2, column=4, columnspan=4, sticky="we")
+        self.root.protocol("WM_DELETE_WINDOW", self._quit_game)
 
         self._refresh_board()
 
@@ -145,7 +146,14 @@ class ChessUI:
             if result["type"] == "checkmate":
                 winner = "White" if result.get("winner") == "w" else "Black"
                 return f"Checkmate! {winner} wins"
-            return "Stalemate! Draw"
+
+            draw_messages = {
+                "stalemate": "Stalemate! Draw",
+                "threefold_repetition": "Draw by repetition",
+                "fifty_move_rule": "Draw by 50-move rule",
+                "insufficient_material": "Draw by insufficient material",
+            }
+            return draw_messages.get(result["type"], "Draw")
 
         turn = "White" if self.game.turn == "w" else "Black"
         if self.game.is_current_turn_in_check():
@@ -180,10 +188,15 @@ class ChessUI:
 ### AI generated code ending
 
     def _restart(self):
+        self.game.pause_clock()
         self.game = Game()
         self.selected = None
         self.highlighted_moves = set()
         self._refresh_board()
+
+    def _quit_game(self):
+        self.game.pause_clock()
+        self.root.destroy()
 
     def run(self):
         self.root.mainloop()

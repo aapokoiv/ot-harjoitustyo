@@ -21,6 +21,7 @@ class Board:
         self.grid = [[None for _ in range(BOARD_COLS)] for _ in range(BOARD_ROWS)]  # [0][0] = a8
         self.en_passant_target = None
         self.pending_promotion = None
+        self.position_counts = {}
 
     def get_piece(self, row, col):
         return self.grid[row][col]
@@ -35,6 +36,42 @@ class Board:
             halfmove_clock=halfmove_clock,
             fullmove_number=fullmove_number,
         )
+
+### AI code starting
+    def repetition_key(self, side_to_move):
+        fen = self.to_fen(side_to_move, 0, 1)
+        placement, active_color, castling_rights, en_passant_square, _, _ = fen.split()
+
+        if en_passant_square != "-" and not self.has_en_passant_capture(side_to_move):
+            en_passant_square = "-"
+
+        return f"{placement} {active_color} {castling_rights} {en_passant_square}"
+
+    def has_en_passant_capture(self, side_to_move):
+        target = self.en_passant_target
+        if target is None:
+            return False
+
+        row, col = target
+        capturing_pawn_row = row + 1 if side_to_move == "w" else row - 1
+
+        if not 0 <= capturing_pawn_row < 8:
+            return False
+
+        captured_pawn = self.get_piece(capturing_pawn_row, col)
+        if not isinstance(captured_pawn, Pawn) or captured_pawn.color == side_to_move:
+            return False
+
+        for pawn_col in (col - 1, col + 1):
+            if not 0 <= pawn_col < 8:
+                continue
+
+            piece = self.get_piece(capturing_pawn_row, pawn_col)
+            if isinstance(piece, Pawn) and piece.color == side_to_move:
+                return True
+
+        return False
+### AI code ending
 
     @staticmethod
     def from_fen(fen):
@@ -81,6 +118,7 @@ class Board:
                 self.pending_promotion[2],
             )
         )
+        board_copy.position_counts = dict(self.position_counts)
         return board_copy
 
     def move_piece(self, start, end):
