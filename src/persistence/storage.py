@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 import sqlite3
+from dotenv import load_dotenv
 
+load_dotenv()
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "chess.db"
 
@@ -220,6 +222,10 @@ class SQLiteStorage:
                 black_time_ms,
                 elapsed_ms,
                 fen_after,
+                eval_cp,
+                eval_mate,
+                eval_delta_cp,
+                analyzed_at,
                 created_at
             FROM moves
             WHERE game_id = ?
@@ -228,6 +234,47 @@ class SQLiteStorage:
             (game_id,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def game_needs_analysis(self, game_id: int) -> bool:
+        """Return whether a finished game has move rows missing analysis."""
+        row = self.conn.execute(
+            """
+            SELECT
+                EXISTS(SELECT 1 FROM moves WHERE game_id = ?) AS has_moves,
+                EXISTS(
+                    SELECT 1
+                    FROM moves
+                    WHERE game_id = ?
+                      AND analyzed_at IS NULL
+                ) AS missing_analysis
+            """,
+            (game_id, game_id),
+        ).fetchone()
+        if row is None:
+            return False
+        return bool(row["has_moves"]) and bool(row["missing_analysis"])
+
+    def save_move_analysis(
+        self,
+        move_id: int,
+        *,
+        eval_cp: int | None,
+        eval_mate: int | None,
+        eval_delta_cp: int | None,
+    ):
+        """Persist one analyzed move result."""
+        with self.conn:
+            self.conn.execute(
+                """
+                UPDATE moves
+                SET eval_cp = ?,
+                    eval_mate = ?,
+                    eval_delta_cp = ?,
+                    analyzed_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (eval_cp, eval_mate, eval_delta_cp, move_id),
+            )
 
     def get_latest_snapshot(self, game_id: int):
         """Return the latest stored FEN snapshot for (game_id)."""

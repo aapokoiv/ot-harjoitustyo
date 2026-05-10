@@ -40,3 +40,5 @@
 - Updated documentation and added a testing document
 - Added missing docstrings
 - Added more testing for clock and persistence logic
+- Added stockfish review
+- Final touches and bug fixes

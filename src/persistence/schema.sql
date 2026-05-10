@@ -31,6 +31,10 @@ CREATE TABLE IF NOT EXISTS moves (
   black_time_ms INTEGER,
   elapsed_ms INTEGER,
   fen_after TEXT NOT NULL,
+  eval_cp INTEGER,
+  eval_mate INTEGER,
+  eval_delta_cp INTEGER,
+  analyzed_at TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(game_id, ply)
 );

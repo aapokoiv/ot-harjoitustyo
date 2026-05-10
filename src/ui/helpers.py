@@ -109,3 +109,19 @@ def build_move_rows(moves):
         black_san = black_move.get("san") if black_move is not None else ""
         rows.append(f"{move_number:>2}. {white_san:<8} {black_san}".rstrip())
     return rows
+
+
+def format_engine_eval(eval_cp, eval_mate):
+    """Format a persisted engine evaluation for display."""
+    if eval_mate is not None:
+        return f"#{eval_mate:+d}"
+    if eval_cp is None:
+        return "--"
+    return f"{eval_cp / 100:+.2f}"
+
+
+def format_eval_delta(eval_delta_cp):
+    """Format an evaluation swing in pawns for display."""
+    if eval_delta_cp is None:
+        return "--"
+    return f"{eval_delta_cp / 100:+.2f}"

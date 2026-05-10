@@ -1,7 +1,7 @@
 import unittest
 
-from chess.game import Game
-from chess.piece import Bishop, King, Knight, Pawn, Queen, Rook
+from logic.game import Game
+from logic.piece import Bishop, King, Knight, Pawn, Queen, Rook
 
 
 class FakeStorageService:

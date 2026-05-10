@@ -1,9 +1,10 @@
 import tkinter as tk
+import threading
 
-from chess.board import Board
-from chess.fen import parse_fen
+from logic.board import Board
+from logic.fen import parse_fen
 from ui import theme
-from ui.helpers import build_move_rows, game_row_result_text
+from ui.helpers import build_move_rows, format_engine_eval, format_eval_delta, game_row_result_text
 from ui.widgets.board_widget import BoardWidget
 
 
@@ -32,12 +33,16 @@ class ReviewView(tk.Frame):
 
         self.status_var = tk.StringVar()
         self.position_var = tk.StringVar()
+        self.analysis_var = tk.StringVar()
+        self.eval_var = tk.StringVar()
         self.board = None
         self.turn = "w"
+        self.analysis_thread = None
 
         self._build_layout()
         self._load_snapshot(self.current_index)
         self._refresh()
+        self._maybe_start_analysis()
 
     def _build_layout(self):
         outer = tk.Frame(self, bg=theme.COLOR_BG)
@@ -51,6 +56,12 @@ class ReviewView(tk.Frame):
             anchor="w", padx=theme.SPACE_LG, pady=(theme.SPACE_MD, theme.SPACE_SM)
         )
         tk.Label(top, textvariable=self.position_var, bg=theme.COLOR_PANEL, fg=theme.COLOR_MUTED, font=theme.FONT_SMALL).pack(
+            anchor="w", padx=theme.SPACE_LG, pady=(0, theme.SPACE_MD)
+        )
+        tk.Label(top, textvariable=self.eval_var, bg=theme.COLOR_PANEL, fg=theme.COLOR_TEXT, font=theme.FONT_SMALL).pack(
+            anchor="w", padx=theme.SPACE_LG, pady=(0, theme.SPACE_XS)
+        )
+        tk.Label(top, textvariable=self.analysis_var, bg=theme.COLOR_PANEL, fg=theme.COLOR_MUTED, font=theme.FONT_SMALL).pack(
             anchor="w", padx=theme.SPACE_LG, pady=(0, theme.SPACE_MD)
         )
 
@@ -93,12 +104,67 @@ class ReviewView(tk.Frame):
         self.board_widget.render(self.board)
         self.status_var.set(f"Game #{self.game_id} | {game_row_result_text(self.game_row)}")
         self.position_var.set(f"Position {self.current_index} / {len(self.snapshots) - 1}")
+        self.eval_var.set(self._evaluation_text())
         selection_index = self.current_index - 1
         self.move_listbox.selection_clear(0, tk.END)
         if selection_index >= 0:
             row_index = selection_index // 2
             self.move_listbox.selection_set(row_index)
             self.move_listbox.see(row_index)
+
+    def _evaluation_text(self):
+        if self.current_index == 0:
+            return "Engine eval: -- | Change: --"
+        move = self.moves[self.current_index - 1]
+        return (
+            f"Engine eval: {format_engine_eval(move.get('eval_cp'), move.get('eval_mate'))}"
+            f" | Change: {format_eval_delta(move.get('eval_delta_cp'))}"
+        )
+
+    def _maybe_start_analysis(self):
+        if self.game_row.get("status") != "finished":
+            self.analysis_var.set("")
+            return
+        if not self.app.service.game_needs_analysis(self.game_id):
+            self.analysis_var.set("Engine analysis saved")
+            self._reload_moves()
+            self._refresh()
+            return
+        if not self.app.analysis_service.stockfish_path:
+            self.analysis_var.set("Engine analysis unavailable: set STOCKFISH_PATH")
+            return
+
+        self.analysis_var.set("Engine analysis: analyzing...")
+        self.analysis_thread = threading.Thread(target=self._run_analysis, daemon=True)
+        self.analysis_thread.start()
+
+    def _run_analysis(self):
+        try:
+            result = self.app.analysis_service.analyze_game(self.game_id)
+        except Exception as error:  # pragma: no cover - UI fallback
+            result = {"status": "error", "reason": str(error)}
+        if self.winfo_exists():
+            self.after(0, lambda: self._on_analysis_complete(result))
+
+    def _on_analysis_complete(self, result):
+        if not self.winfo_exists():
+            return
+        status = result.get("status")
+        if status in {"analyzed", "cached"}:
+            self._reload_moves()
+            self.analysis_var.set("Engine analysis saved")
+            self._refresh()
+            return
+        if status == "unavailable":
+            self.analysis_var.set(f"Engine analysis unavailable: {result.get('reason')}")
+            return
+        if status == "error":
+            self.analysis_var.set(f"Engine analysis failed: {result.get('reason')}")
+            return
+        self.analysis_var.set("Engine analysis skipped")
+
+    def _reload_moves(self):
+        self.moves = self.app.service.get_moves(self.game_id)
 
     def go_to_start(self):
         """Jump to the starting position."""
@@ -130,6 +196,7 @@ class ReviewView(tk.Frame):
 
     def on_show(self):
         """Refresh the displayed snapshot when the view becomes visible."""
+        self._reload_moves()
         self._refresh()
 
     def on_hide(self):

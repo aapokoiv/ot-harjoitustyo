@@ -3,6 +3,8 @@
 With this app you can play and review chess games locally between two people. 
 The app provides a GUI that you can play and review the games from.
 
+The app needs python version 3.12 or higher. It has been tested with 3.12.
+
 ## Documentation
 
 - [User instructions](documentation/user-instructions.md)
@@ -19,7 +21,7 @@ The app provides a GUI that you can play and review the games from.
 
 ## Latest release
 
-[Latest release](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko6)
+[Latest](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko6)
 
 ## Installation
 
@@ -29,6 +31,7 @@ Run this in the project root:
 ```bash
 poetry install
 ```
+
 2. Start the app
 
 ```bash

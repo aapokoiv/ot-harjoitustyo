@@ -91,6 +91,26 @@ class MoveStorageService:
         """Return persisted moves for a game ordered by ply."""
         return self.storage.get_moves(game_id)
 
+    def game_needs_analysis(self, game_id: int) -> bool:
+        """Return whether a finished game still has unanalyzed moves."""
+        return self.storage.game_needs_analysis(game_id)
+
+    def save_move_analysis(
+        self,
+        move_id: int,
+        *,
+        eval_cp: int | None,
+        eval_mate: int | None,
+        eval_delta_cp: int | None,
+    ):
+        """Persist engine analysis values for a saved move."""
+        self.storage.save_move_analysis(
+            move_id,
+            eval_cp=eval_cp,
+            eval_mate=eval_mate,
+            eval_delta_cp=eval_delta_cp,
+        )
+
     def get_latest_snapshot(self, game_id: int):
         """Return the newest stored position snapshot for a game."""
         return self.storage.get_latest_snapshot(game_id)

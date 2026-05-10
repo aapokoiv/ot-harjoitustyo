@@ -27,7 +27,7 @@ FEN parsing and serialization are tested in `src/tests/test_fen.py`. The tests
 verify that the board can be converted to FEN correctly, reconstructed from FEN,
 and that invalid FEN strings raise appropriate errors.
 
-Clock related test are done in `src/test/test_clock.py`. The tests verify that the
+Clock related test are done in `src/tests/test_clock.py`. The tests verify that the
 clock state starts, updates and returns correctly.
 
 ### Persistence
@@ -35,12 +35,20 @@ clock state starts, updates and returns correctly.
 Service system is tested in `src/tests/test_service.py`. These test use a FakeStorage
 to verify that the service provides the correct answers and works like expected.
 
-The storage tests are in `src/tests/test_service.py`. These have the db be in memory
+The storage tests are in `src/tests/test_storage.py`. These have the db be in memory
 so nothing is saved permanently from the tests. The tests verify that the app saves 
 info correctly.
 
 The tests in `src/tests/test_init_db.py` test that the db initialization works like 
 expected.
+
+The Stockfish engine is tested minimally in `src/tests/test_analysis_service.py`. It tests caching and move evaluation saving
+
+## Branch coverage
+
+Branch coverage while ignoring test and UI files
+
+![Coverage report](../assets/docs/coverage-report.png)
 
 ## System testing
 
@@ -65,4 +73,9 @@ application, such as:
 - saving games and move history
 - continuing unfinished games from history
 - reviewing finished games move by move
+- chess engine loading and its evaluation
 
+### Missing / things to improve
+- The chess engine related things have minimal automated testing
+- Some new additions to game class are not tested that thoroughly
+- No tests for the UI specifically

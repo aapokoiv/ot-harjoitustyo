@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from chess.game import ClockConfig, Game
+from logic.game import ClockConfig, Game
+from persistence.analysis_service import StockfishAnalysisService
 from persistence.service import MoveStorageService
 from ui import theme
 from ui.helpers import load_piece_images
@@ -33,6 +34,7 @@ class ChessApp:
         self.root.protocol("WM_DELETE_WINDOW", self._close)
 
         self.service = MoveStorageService()
+        self.analysis_service = StockfishAnalysisService(self.service)
         self.piece_images = load_piece_images()
         self.current_view = None
         self.current_view_state = None

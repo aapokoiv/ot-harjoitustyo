@@ -11,7 +11,7 @@ class MenuView(tk.Frame):
     Attributes:
         app: Application controller used for navigation and actions.
         clock_enabled_var (tk.BooleanVar): Whether the new game uses a clock.
-        increment_var (tk.IntVar): Increment seconds for timed games.
+        increment_var (tk.StringVar): Increment seconds for timed games.
         custom_minutes_var (tk.StringVar): Base time input in minutes.
     """
 
@@ -22,7 +22,7 @@ class MenuView(tk.Frame):
         super().__init__(master, bg=theme.COLOR_BG, padx=theme.SPACE_XL, pady=theme.SPACE_XL)
         self.app = app
         self.clock_enabled_var = tk.BooleanVar(value=False)
-        self.increment_var = tk.IntVar(value=0)
+        self.increment_var = tk.StringVar(value="0")
         self.custom_minutes_var = tk.StringVar(value="5")
 
         self.columnconfigure(0, weight=0)
@@ -109,6 +109,17 @@ class MenuView(tk.Frame):
             button.config(state=state)
 
     def _create_game(self):
+        increment_value = self.increment_var.get()
+        try:
+            increment_seconds = int(increment_value)
+        except ValueError:
+            messagebox.showerror("Invalid time", "Increment must be a whole number of seconds.")
+            return
+
+        if increment_seconds < 0:
+            messagebox.showerror("Invalid time", "Increment cannot be negative.")
+            return
+
         if self.clock_enabled_var.get():
             try:
                 custom_minutes = int(self.custom_minutes_var.get())
@@ -124,7 +135,7 @@ class MenuView(tk.Frame):
         self.app.create_game(
             clock_enabled=self.clock_enabled_var.get(),
             initial_seconds=initial_seconds,
-            increment_seconds=int(self.increment_var.get()),
+            increment_seconds=increment_seconds,
         )
 
     def refresh(self):

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from chess.clock import ClockState
+from logic.clock import ClockState
 
 
 class TestClock(unittest.TestCase):

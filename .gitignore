@@ -3,5 +3,6 @@ htmlcov/
 __pycache__/
 .pytest_cache
 AGENTS.md
+.env
 
 data/*

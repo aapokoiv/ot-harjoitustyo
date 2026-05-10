@@ -1,7 +1,7 @@
 import unittest
 
-from chess.board import Board
-from chess.piece import King, Rook
+from logic.board import Board
+from logic.piece import King, Rook
 
 
 class TestFen(unittest.TestCase):

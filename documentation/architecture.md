@@ -10,18 +10,19 @@ split into three main areas:
   - view management in `ui/app.py`
   - views in `ui/views/`
   - reusable widgets and dialogs in `ui/widgets/` and `ui/dialogs/`
-- `src/chess/`
+- `src/logic/`
   - chess rules and application logic
   - board representation, pieces, FEN handling, clocks, and game state
 - `src/persistence/`
   - SQLite storage, schema creation, and persistence service used by the game
+  - Stockfish engine loading, worker process execution, and analysis saving
 
 Other relevant files are:
 
 - `src/ui.py`, which acts as the application entry point
 - `src/init_db.py`, which initializes the database manually when needed
 - `src/tests/`, which contains the automated tests
-- `assets/`, which contains the chess piece images used by the UI
+- `assets/`, which contains the chess piece images used by the UI and docs images
 
 ## User interface
 
@@ -38,7 +39,8 @@ and returning to previous views are handled by `ChessApp` in `src/ui/app.py`.
 The UI is separated from the chess rules themselves. `GameView` communicates with
 the `Game` object for board interaction, move validation, promotion, and clock
 handling. History and review related views fetch stored game data through
-`MoveStorageService`.
+`MoveStorageService`. `ReviewView` also uses `StockfishAnalysisService` to run
+and cache engine analysis for finished games.
 
 ## Application logic
 
@@ -52,17 +54,21 @@ The main classes and their relationships are described below.
 ```mermaid
 classDiagram
   ChessApp --> MoveStorageService
+  ChessApp --> StockfishAnalysisService
   ChessApp --> GameView
   ChessApp --> HistoryView
   ChessApp --> ReviewView
   GameView --> Game
   HistoryView --> MoveStorageService
   ReviewView --> MoveStorageService
+  ReviewView --> StockfishAnalysisService
   ReviewView ..> FenModule : parse_fen
 
   Game --> Board
   Game --> ClockState
   Game --> MoveStorageService
+  StockfishAnalysisService --> MoveStorageService
+  StockfishAnalysisService --> EngineWorker
   Board --> Piece
   Board ..> FenModule : to_fen/from_fen
   MoveStorageService --> SQLiteStorage
@@ -119,6 +125,16 @@ classDiagram
     +get_game(game_id)
     +get_moves(game_id)
     +get_latest_snapshot(game_id)
+    +game_needs_analysis(game_id)
+    +save_move_analysis(move_id, eval_cp, eval_mate, eval_delta_cp)
+  }
+
+  class StockfishAnalysisService {
+    +analyze_game(game_id)
+  }
+
+  class EngineWorker {
+    +analyze_positions(payload)
   }
 
   class SQLiteStorage {
@@ -162,7 +178,11 @@ classDiagram
 ## Persistence
 
 Persistence is handled through `MoveStorageService` in `src/persistence/service.py`,
-which wraps `SQLiteStorage` in `src/persistence/storage.py`.
+which wraps `SQLiteStorage` in `src/persistence/storage.py`. Finished games can
+also be analyzed through `StockfishAnalysisService` in
+`src/persistence/analysis_service.py`, which runs a separate worker process from
+`src/persistence/engine_worker.py` and saves per-move evaluations back to the
+database.
 
 The default database path is `data/chess.db`, unless another path is given
 through the `CHESS_DB_PATH` environment variable or through the `--db-path`
@@ -180,7 +200,8 @@ The database contains two main tables:
 - `moves`
   - stores one row per ply
   - stores move coordinates, moved piece, optional promotion, SAN notation,
-    elapsed move time, and the FEN snapshot after the move
+    elapsed move time, the FEN snapshot after the move, and optional stored
+    engine evaluation fields
 
 This stored move history is used both for continuing unfinished games and for
 reviewing finished ones.
@@ -293,3 +314,6 @@ sequenceDiagram
   Review->>Review: render selected position and move list
 ```
 
+## Problems / things left to improve
+- The `Game` class has grown quite large and it should be refactored
+  - SAN notation and turn switching and move validation could be separated

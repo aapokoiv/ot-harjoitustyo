@@ -34,5 +34,7 @@
 | 10.5| 1    | Code and project cleanup
 | 10.5| 2    | Updated documentation thoroughly and added a testing document
 | 10.5| 2    | Added testing for clock and persistence files. Some more code quality improvements
+| 10.5| 2    | Added Stockfish for move analysis
+| 10.5| 2    | Testing, fixing docs and bugs
 
-|total| 55   |   |
+|total| 67   |   |

@@ -17,11 +17,13 @@ There is currently only one type of user.
   - GUI shows legal moves when clicking a piece :white_check_mark:
   - GUI shows list of played moves :white_check_mark:
 - See full game history and review all games :white_check_mark:
+  - Game review includes stockfish move by move evaluation
 
 ### The application will
 - Validate played moves :white_check_mark:
   - The app will block illegal moves :white_check_mark:
-- Recognize when the game ends either in checkmate or stalemate :white_check_mark:
+- Recognize all conditions when the game ends :white_check_mark:
+  - Checkmate, stalemate, timeout, threefold repetition, fifty-move rule, and insufficient material
 - Manage turns between white and black :white_check_mark:
 - Save games and moves to the database
 
@@ -31,7 +33,6 @@ There is currently only one type of user.
 - Sound effects
   - Check 
   - Moving a piece
-- Stockfish
-  - Game evaluation
-  - Playing against a local bot
-
+- Playing against a local bot
+- Chess material count in UI 
+- Ability to surrender

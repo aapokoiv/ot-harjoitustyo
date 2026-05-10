@@ -138,8 +138,10 @@ class GameView(tk.Frame):
     def _tick(self):
         self.game.handle_clock_tick()
         self._refresh()
-        if self.winfo_exists() and self.poll_id is not None:
+        if self.winfo_exists() and self.poll_id is not None and self.game.result is None:
             self._schedule_tick()
+            return
+        self.poll_id = None
 
     def _refresh(self):
         self._refresh_board()
