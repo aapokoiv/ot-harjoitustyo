@@ -36,5 +36,4 @@
 | 10.5| 2    | Added testing for clock and persistence files. Some more code quality improvements
 | 10.5| 2    | Added Stockfish for move analysis
 | 10.5| 2    | Testing, fixing docs and bugs
-
 |total| 67   |   |
