@@ -44,8 +44,7 @@ If you click the selected piece again or click a non-highlighted square, the sel
 
 - On checkmate, the app shows the winner.
 - On stalemate, the app shows a draw result.
-- Opening a finished game in review starts a one-time engine analysis when
-  `STOCKFISH_PATH` is configured.
+- Opening a finished game in review starts a one-time engine analysis.
 - Press `Quit` in any place to close the application.
 
 ### Optional options
