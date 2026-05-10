@@ -17,7 +17,7 @@ There is currently only one type of user.
   - GUI shows legal moves when clicking a piece :white_check_mark:
   - GUI shows list of played moves :white_check_mark:
 - See full game history and review all games :white_check_mark:
-  - Game review includes stockfish move by move evaluation
+  - Game review includes stockfish move by move evaluation :white_check_mark:
 
 ### The application will
 - Validate played moves :white_check_mark:
@@ -25,7 +25,7 @@ There is currently only one type of user.
 - Recognize all conditions when the game ends :white_check_mark:
   - Checkmate, stalemate, timeout, threefold repetition, fifty-move rule, and insufficient material
 - Manage turns between white and black :white_check_mark:
-- Save games and moves to the database
+- Save games and moves to the database :white_check_mark:
 
 ## Future feature ideas
 - Player can review on-going games previous positions through the list
@@ -36,3 +36,4 @@ There is currently only one type of user.
 - Playing against a local bot
 - Chess material count in UI 
 - Ability to surrender
+- Deleting games from database
