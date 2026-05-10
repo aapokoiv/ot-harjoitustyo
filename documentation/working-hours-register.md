@@ -29,5 +29,10 @@
 | 9.5 | 3    | Implemented the missing logic for draws in different special cases
 | 9.5 | 3    | Implemented the logic and db changes for chess clock
 | 9.5 | 3    | Storing extra information and some logic changes for being able to pause/continue and review games
+| 9.5 | 1    | Started working on the new UI changes.
+| 10.5| 2    | Finished revamping the UI, added new views and connected new logic
+| 10.5| 1    | Code and project cleanup
+| 10.5| 2    | Updated documentation thoroughly and added a testing document
+| 10.5| 2    | Added testing for clock and persistence files. Some more code quality improvements
 
 |total| 55   |   |

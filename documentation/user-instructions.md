@@ -26,11 +26,17 @@ poetry run invoke start
 
 ## How the App Works
 
-The app is a local two-player chess game played on the same computer.
+The app starts in a menu from which you can create a new game, review or continue previous games, view the full previously played history.
 
-### Starting a Game
+### Starting a new Game
 
-When the app opens, a new chess game starts with the standard initial position. White moves first.
+On the left in the main menu you can create a new game. You can select if you want to have a chess clock with whatever time amount and possible time increment.
+The game works like normal chess, the game clocks pause if you exit the game.
+
+### Game history
+
+On the main menu you can see the last previous games. You can continue playing non-finished games and review all games.
+You can also move to the history page from which you can see all games.
 
 ### Moving Pieces
 
@@ -38,11 +44,10 @@ When the app opens, a new chess game starts with the standard initial position. 
 2. Legal destination squares are highlighted.
 3. Click a highlighted square to make the move.
 
-If you click the selected piece again, the selection is cancelled.
+If you click the selected piece again or click a non-highlighted square, the selection is cancelled.
 
 ### Game End and Controls
 
 - On checkmate, the app shows the winner.
 - On stalemate, the app shows a draw result.
-- Press `Restart` to begin a new game.
-- Press `Quit` to close the application.
+- Press `Quit` in any place to close the application.

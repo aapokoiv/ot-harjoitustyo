@@ -35,3 +35,8 @@
 - Added logic for multiple different draw situations.
 - Added chess clock logic 
 - Added logic and db changes for game review and pause/continue functionality
+- Updated UI with multiple views containing new logic and a lot of UX improvements
+- Refactored pylint errors and improved code quality
+- Updated documentation and added a testing document
+- Added missing docstrings
+- Added more testing for clock and persistence logic

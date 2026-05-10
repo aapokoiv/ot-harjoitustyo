@@ -3,11 +3,19 @@ from pathlib import Path
 import sqlite3
 
 
-DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "chess.db"
+DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "chess.db"
 
 
 class SQLiteStorage:
+    """SQLite-backed persistence layer for games and moves.
+
+    Attributes:
+        db_path (str): Path to the SQLite database file.
+        conn (sqlite3.Connection | None): Open SQLite connection.
+    """
+
     def __init__(self, db_path: str | None = None):
+        """Open the SQLite database and ensure the schema exists."""
         resolved_db_path = db_path or os.getenv("CHESS_DB_PATH") or str(DEFAULT_DB_PATH)
 
         if resolved_db_path != ":memory:":
@@ -26,9 +34,11 @@ class SQLiteStorage:
             self.conn.executescript(schema)
 
     def ensure_schema(self):
+        """Create database tables if they do not already exist."""
         self._init_db()
 
     def close(self):
+        """Close the active database connection."""
         if getattr(self, "conn", None) is not None:
             self.conn.close()
             self.conn = None
@@ -43,6 +53,7 @@ class SQLiteStorage:
         white_time_ms: int | None = None,
         black_time_ms: int | None = None,
     ) -> int:
+        """Insert a new game row and return its id."""
         with self.conn:
             cursor = self.conn.execute(
                 """
@@ -76,6 +87,7 @@ class SQLiteStorage:
         winner: str | None,
         final_fen: str,
     ):
+        """Mark a persisted game as finished."""
         with self.conn:
             self.conn.execute(
                 """
@@ -90,6 +102,7 @@ class SQLiteStorage:
                 (result_type, winner, final_fen, game_id),
             )
     def update_game_clock(self, game_id: int, *, white_time_ms: int, black_time_ms: int):
+        """Update persisted clock values for an existing game."""
         with self.conn:
             self.conn.execute(
                 """
@@ -101,6 +114,7 @@ class SQLiteStorage:
                 (white_time_ms, black_time_ms, game_id),
             )
     def store_move(self, game_id: int, move_data: dict) -> int:
+        """Insert a move row and return its id."""
         start = move_data["start"]
         end = move_data["end"]
         from_row, from_col = start
@@ -145,6 +159,7 @@ class SQLiteStorage:
         include_ongoing: bool = True,
         sort_desc: bool = True,
     ):
+        """Return game rows for history-style listings."""
         order = "DESC" if sort_desc else "ASC"
         status_filter = "" if include_ongoing else "WHERE g.status = 'finished'"
         rows = self.conn.execute(
@@ -171,6 +186,7 @@ class SQLiteStorage:
         return [dict(row) for row in rows]
 
     def get_game(self, game_id: int):
+        """Return one game row as a dictionary, or (None) if not found."""
         row = self.conn.execute(
             """
             SELECT
@@ -186,6 +202,7 @@ class SQLiteStorage:
         return dict(row)
 
     def get_moves(self, game_id: int):
+        """Return all persisted moves for (game_id) ordered by ply."""
         rows = self.conn.execute(
             """
             SELECT
@@ -213,6 +230,7 @@ class SQLiteStorage:
         return [dict(row) for row in rows]
 
     def get_latest_snapshot(self, game_id: int):
+        """Return the latest stored FEN snapshot for (game_id)."""
         move_row = self.conn.execute(
             """
             SELECT ply, fen_after

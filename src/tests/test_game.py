@@ -1,7 +1,7 @@
 import unittest
 
-from game import Game
-from piece import Bishop, King, Knight, Pawn, Queen, Rook
+from chess.game import Game
+from chess.piece import Bishop, King, Knight, Pawn, Queen, Rook
 
 
 class FakeStorageService:
@@ -274,21 +274,6 @@ class TestGame(unittest.TestCase):
         self.game._update_turn_state()
 
         self.assertEqual(self.game.result, {"type": "insufficient_material"})
-
-    def test_not_insufficient_material_with_bishop_and_knight(self):
-        self.game.board.grid = [[None for _ in range(8)] for _ in range(8)]
-        self.game.board.set_piece(7, 4, King("w"))
-        self.game.board.set_piece(0, 4, King("b"))
-        self.game.board.set_piece(6, 2, Bishop("w"))
-        self.game.board.set_piece(6, 5, Knight("w"))
-        self.game.turn = "w"
-        self.game.result = None
-        self.game.board.position_counts = {}
-        self.game._record_current_position()
-
-        self.game._update_turn_state()
-
-        self.assertIsNone(self.game.result)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,7 @@
 # Chess app
 
-With this app you can play chess locally between two people on the same computer. 
-Chess rules and the flow of the game have been implemented.
-The app provides a GUI that you can play the game from.
-
-*Currently draw by repetition or by 50 move rule are not implemented*
+With this app you can play and review chess games locally between two people. 
+The app provides a GUI that you can play and review the games from.
 
 ## Documentation
 
@@ -17,6 +14,8 @@ The app provides a GUI that you can play the game from.
 - [Changelog](documentation/changelog.md)
 
 - [Architecture](documentation/architecture.md)
+
+- [Testing](documentation/testing.md)
 
 ## Latest release
 

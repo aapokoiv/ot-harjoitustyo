@@ -2,26 +2,70 @@
 
 ## Structure
 
-The project currently has source files under
-`src/` and responsibilities are grouped as follows:
+The project uses a package structure under `src/`, where responsibilities are
+split into three main areas:
 
-- Presentation: `src/ui.py` (Tkinter UI, board rendering and dialogs)
-- Application core: `src/game.py`, `src/board.py`, `src/piece.py`
-- Persistence / services: `src/service.py`, `src/storage.py`, `src/schema.sql`
-- Utilities: `src/fen.py` (FEN conversion)
-- Assets: `assets/` (piece images used by the UI)
+- `src/ui/`
+  - graphical user interface
+  - view management in `ui/app.py`
+  - views in `ui/views/`
+  - reusable widgets and dialogs in `ui/widgets/` and `ui/dialogs/`
+- `src/chess/`
+  - chess rules and application logic
+  - board representation, pieces, FEN handling, clocks, and game state
+- `src/persistence/`
+  - SQLite storage, schema creation, and persistence service used by the game
 
-## App logic
+Other relevant files are:
+
+- `src/ui.py`, which acts as the application entry point
+- `src/init_db.py`, which initializes the database manually when needed
+- `src/tests/`, which contains the automated tests
+- `assets/`, which contains the chess piece images used by the UI
+
+## User interface
+
+The graphical interface contains four main views:
+
+- `MenuView`
+- `GameView`
+- `HistoryView`
+- `ReviewView`
+
+Only one view is active at a time. View creation, navigation, geometry changes,
+and returning to previous views are handled by `ChessApp` in `src/ui/app.py`.
+
+The UI is separated from the chess rules themselves. `GameView` communicates with
+the `Game` object for board interaction, move validation, promotion, and clock
+handling. History and review related views fetch stored game data through
+`MoveStorageService`.
+
+## Application logic
+
+The main logic is centered around the `Game` class. `Game` owns the current
+position, handles move validation and rule enforcement, tracks clock state,
+updates game-end conditions, generates SAN notation, and persists moves through
+the storage service.
+
+The main classes and their relationships are described below.
 
 ```mermaid
 classDiagram
-  %% Core relationships
-  Game "1" --> "1" Board
-  Game "1" --> "1" MoveStorageService
-  ChessUI "1" --> "1" Game
-  Board "1" --> "0..32" Piece
+  ChessApp --> MoveStorageService
+  ChessApp --> GameView
+  ChessApp --> HistoryView
+  ChessApp --> ReviewView
+  GameView --> Game
+  HistoryView --> MoveStorageService
+  ReviewView --> MoveStorageService
+  ReviewView ..> FenModule : parse_fen
+
+  Game --> Board
+  Game --> ClockState
+  Game --> MoveStorageService
+  Board --> Piece
   Board ..> FenModule : to_fen/from_fen
-  MoveStorageService ..> SQLiteStorage : persists
+  MoveStorageService --> SQLiteStorage
 
   class Game {
     +board: Board
@@ -29,37 +73,68 @@ classDiagram
     +result: dict|None
     +halfmove_clock: int
     +fullmove_number: int
-    +last_move_context: dict|None
-    +game_id: int
-    +storage_service: MoveStorageService
+    +game_id: int|None
     +make_move(start, end)
     +complete_promotion(piece_type)
     +click_board(row, col)
     +is_move_legal(start, end, color)
     +switch_turn()
-    +_update_turn_state()
+    +pause_clock()
+    +resume_clock()
+    +handle_clock_tick()
   }
 
   class Board {
     +grid
     +en_passant_target
     +pending_promotion
+    +position_counts
     +get_piece(row, col)
     +set_piece(row, col, piece)
     +move_piece(start, end)
-    +handle_promotion(row, col, piece)
     +promote(piece_type)
     +clone()
     +to_fen(side, halfmove, fullmove)
     +from_fen(fen)
+    +repetition_key(side_to_move)
+    +is_square_attacked(row, col, by_color)
     +is_king_in_check(color)
   }
 
+  class ClockState {
+    +remaining_ms
+    +active_side
+    +start(side)
+    +pause()
+    +apply_move(next_side)
+    +check_timeout()
+  }
+
+  class MoveStorageService {
+    +start_game(initial_fen)
+    +save_move(game_id, move_data)
+    +finish_game(game_id, result_type, winner, final_fen)
+    +update_game_clock(game_id, white_time_ms, black_time_ms)
+    +list_games(limit, include_ongoing, sort_desc)
+    +get_game(game_id)
+    +get_moves(game_id)
+    +get_latest_snapshot(game_id)
+  }
+
+  class SQLiteStorage {
+    +create_game(initial_fen)
+    +store_move(game_id, move_data)
+    +finish_game(game_id, result_type, winner, final_fen)
+    +list_games(limit, include_ongoing, sort_desc)
+    +get_game(game_id)
+    +get_moves(game_id)
+    +get_latest_snapshot(game_id)
+  }
+
   class Piece {
-    -color
-    -symbol
+    +color
+    +symbol
     +get_moves(pos, board)
-    +__str__()
   }
 
   class Pawn
@@ -81,85 +156,140 @@ classDiagram
   Piece <|-- King
 ```
 
-## Main Functionality ##
-
-The following sequence diagrams describe the primary user-visible flows.
-
-### Piece Selection and Move Highlighting
-
-When a user clicks a square the UI asks the Game for the piece and the
-legal destinations. The Game asks the piece for generated moves and then
-filters them using `is_move_legal`.
-
-```mermaid
-sequenceDiagram
-  actor User
-  participant UI as ChessUI
-  participant Game
-  participant Board
-  participant Piece
-  User->>UI: click square (row, col)
-  UI->>Game: click_board(row, col)
-  Game->>Board: get_piece(row, col)
-  Board-->>Game: piece or None
-  Game->>Piece: if piece: piece.get_moves((row,col), board)
-  Piece-->>Game: moves
-  Game->>Game: filter legal moves (is_move_legal)
-  Game-->>UI: (piece, legal_moves)
-  UI->>UI: highlight legal targets / clear highlights
-```
-
-### Make Move and Promotion Handling
-
-When the user clicks a highlighted destination the UI calls `make_move`.
-`Board.move_piece` applies mutations and sets `pending_promotion` if a
-pawn reached the last rank. If a promotion is pending the UI shows the
-modal and calls `complete_promotion`. After the move is finalised the
-Game asks the storage service to save the ply together with the FEN
-after the move.
-
-```mermaid
-sequenceDiagram
-  actor User
-  participant UI as ChessUI
-  participant Game
-  participant Board
-  participant Piece
-  participant Dialog
-  participant Storage as MoveStorageService
-  User->>UI: click highlighted target (end)
-  UI->>Game: make_move(start, end)
-  Game->>Game: is_move_legal(start, end, turn)
-  Game->>Board: get_piece(start)
-  Board-->>Game: piece or None
-  Game->>Piece: piece.get_moves(start, board)
-  Piece-->>Game: moves
-  Game->>Board: move_piece(start, end)
-  Board-->>Game: moved - castling and enpassant handled, pending_promotion set
-  Game-->>UI: move succeeded (pending_promotion?)
-  Game->>Game: switch_turn() (if not pending_promotion)
-  UI->>Dialog: show_promotion_dialog() (if pending_promotion)
-  Dialog-->>UI: choice (e.g., "Q")
-  UI->>Game: complete_promotion(choice)
-  Game->>Board: promote(choice)
-  Board-->>Game: promotion success
-  Game->>Game: switch_turn()
-  Game->>Board: to_fen(next_turn, halfmove_clock, fullmove_number)
-  Board-->>Game: fen_after
-  Game->>Storage: After either switch_turn: save_move(game_id, start, end, piece, fen_after, promotion)
-  Storage-->>Game: saved
-  Game-->>UI: promotion completed / move finalized
-UI->>UI: refresh board / update turn label
-```
+`Board`, `Piece`, and the FEN helpers form the lower-level chess model.
+`Game` builds on top of them and represents a complete playable game.
 
 ## Persistence
 
-Persistence is handled by `MoveStorageService` (`src/service.py`) which
-wraps `SQLiteStorage` (`src/storage.py`). The default database path is
-`data/chess.db` and the schema is in `src/schema.sql`. The storage model
-contains two tables:
+Persistence is handled through `MoveStorageService` in `src/persistence/service.py`,
+which wraps `SQLiteStorage` in `src/persistence/storage.py`.
 
-- `games` — stores initial and final FEN and result metadata,
-- `moves` — stores one row per ply with move coordinates, piece,
-  optional promotion and the FEN after the move.
+The default database path is `data/chess.db`, unless another path is given
+through the `CHESS_DB_PATH` environment variable or through the `--db-path`
+argument of `src/init_db.py`.
+
+The schema is defined in `src/persistence/schema.sql`. 
+
+The database contains two main tables:
+
+- `games`
+  - stores the initial and final FEN of a game
+  - stores game result metadata
+  - stores whether the game is ongoing or finished
+  - stores time control and remaining clock information
+- `moves`
+  - stores one row per ply
+  - stores move coordinates, moved piece, optional promotion, SAN notation,
+    elapsed move time, and the FEN snapshot after the move
+
+This stored move history is used both for continuing unfinished games and for
+reviewing finished ones.
+
+## Main functionality
+
+The following sequence diagrams describe the most important user-visible flows.
+
+### Piece selection and move highlighting
+
+When the user clicks a square in the game view, the UI asks `Game` for the piece
+on that square and for its legal moves. `Game` first asks the selected piece for
+candidate moves and then filters them with full legality checks.
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant View as GameView
+  participant Game
+  participant Board
+  participant Piece
+  User->>View: click square (row, col)
+  View->>Game: click_board(row, col)
+  Game->>Board: get_piece(row, col)
+  Board-->>Game: piece or None
+  Game->>Piece: get_moves((row, col), board)
+  Piece-->>Game: candidate moves
+  Game->>Game: filter with is_move_legal(...)
+  Game-->>View: piece, legal_moves
+  View->>View: highlight legal targets or clear selection
+```
+
+### Making a move and handling promotion
+
+When the user clicks a highlighted destination square, `GameView` asks `Game` to
+make the move. The board state is updated, special move rules are handled, and
+the move is persisted after it is fully finalized. If promotion is needed, the
+UI asks the user for the promotion piece and completes the move only after that.
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant View as GameView
+  participant Game
+  participant Board
+  participant Dialog as PromotionDialog
+  participant Storage as MoveStorageService
+  User->>View: click highlighted target
+  View->>Game: make_move(start, end)
+  Game->>Game: validate move
+  Game->>Board: move_piece(start, end)
+  Board-->>Game: board updated, pending_promotion?
+  alt Promotion pending
+    Game-->>View: move accepted, promotion pending
+    View->>Dialog: show()
+    Dialog-->>View: chosen piece
+    View->>Game: complete_promotion(choice)
+    Game->>Board: promote(choice)
+  end
+  Game->>Game: switch_turn()
+  Game->>Game: update counters, repetition state and result
+  Game->>Storage: save_move(..., fen_after, san, clock data)
+  Storage-->>Game: saved
+  View->>Storage: get_moves(game_id)
+  View->>View: refresh board, status, clocks and move list
+```
+
+### Creating a new game
+
+When the user creates a new game from the main menu, the application creates a
+new `Game` object and stores the initial game row immediately.
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Menu as MenuView
+  participant App as ChessApp
+  participant Game
+  participant Storage as MoveStorageService
+  User->>Menu: click "Create Game"
+  Menu->>App: create_game(clock settings)
+  App->>Game: Game(storage_service, clock_config)
+  Game->>Storage: start_game(initial_fen, clock settings)
+  Storage-->>Game: game_id
+  App->>App: show_game(game)
+```
+
+### Reviewing a finished game
+
+Finished games can be opened in review mode. The review view loads the initial
+FEN and all stored move snapshots, and then reconstructs any position by parsing
+the stored FEN string of the selected snapshot.
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant History as HistoryView
+  participant App as ChessApp
+  participant Review as ReviewView
+  participant Storage as MoveStorageService
+  participant Fen as FenModule
+  User->>History: click "Review"
+  History->>App: open_review(game_id)
+  App->>Review: create ReviewView(game_id)
+  Review->>Storage: get_game(game_id)
+  Review->>Storage: get_moves(game_id)
+  Storage-->>Review: game row and moves
+  Review->>Fen: parse_fen(snapshot_fen)
+  Fen-->>Review: board state
+  Review->>Review: render selected position and move list
+```
 

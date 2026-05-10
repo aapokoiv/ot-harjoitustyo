@@ -1,5 +1,5 @@
-from piece import Pawn, Knight, Bishop, Rook, Queen, King
-from fen import board_to_fen, board_from_fen
+from chess.fen import board_to_fen, board_from_fen
+from chess.piece import Pawn, Knight, Bishop, Rook, Queen, King
 
 BOARD_ROWS = 8
 BOARD_COLS = 8
@@ -10,6 +10,12 @@ class Board:
     The board stores pieces in a rows, colums 2D list where [0][0] corresponds
     to a8 in algebraic notation. Public methods of this class provide the
     operations needed by the game logic.
+
+    Attributes:
+        grid (list[list[Piece | None]]): Squares indexed by ``[row][col]``.
+        en_passant_target (tuple[int, int] | None): Current en passant target square.
+        pending_promotion (tuple[int, int, str] | None): Promotion square and color.
+        position_counts (dict[str, int]): Repetition counter keyed by reduced FEN.
     """
 
     def __init__(self):
@@ -24,12 +30,15 @@ class Board:
         self.position_counts = {}
 
     def get_piece(self, row, col):
+        """Return the piece at ``(row, col)``, or ``None`` if empty."""
         return self.grid[row][col]
 
     def set_piece(self, row, col, piece):
+        """Place ``piece`` at ``(row, col)``."""
         self.grid[row][col] = piece
 
     def to_fen(self, side_to_move, halfmove_clock=0, fullmove_number=1):
+        """Serialize the board state to Forsyth-Edwards Notation."""
         return board_to_fen(
             board=self,
             side_to_move=side_to_move,
@@ -39,6 +48,7 @@ class Board:
 
 ### AI code starting
     def repetition_key(self, side_to_move):
+        """Return the normalized key used for threefold repetition tracking."""
         fen = self.to_fen(side_to_move, 0, 1)
         placement, active_color, castling_rights, en_passant_square, _, _ = fen.split()
 
@@ -48,6 +58,7 @@ class Board:
         return f"{placement} {active_color} {castling_rights} {en_passant_square}"
 
     def has_en_passant_capture(self, side_to_move):
+        """Return whether ``side_to_move`` can currently capture en passant."""
         target = self.en_passant_target
         if target is None:
             return False
@@ -75,11 +86,11 @@ class Board:
 
     @staticmethod
     def from_fen(fen):
+        """Create a board from a FEN string."""
         return board_from_fen(
             fen=fen,
             board_cls=Board,
             board_rows=BOARD_ROWS,
-            board_cols=BOARD_COLS,
         )
 
     def clone(self):
@@ -122,6 +133,11 @@ class Board:
         return board_copy
 
     def move_piece(self, start, end):
+        """Move a piece and update board-side rule state.
+
+        This handles en passant captures, castling rook movement, en passant
+        targets and pending promotions.
+        """
         piece = self.get_piece(start[0], start[1])
         if piece is None:
             raise TypeError("Can't move a non-existent piece")
@@ -152,6 +168,14 @@ class Board:
         self.pending_promotion = (row, col, piece.color)
 
     def promote(self, piece_type):
+        """Complete a pending pawn promotion.
+
+        Args:
+            piece_type (str): One-letter promotion code, such as ``Q`` or ``N``.
+
+        Returns:
+            bool: ``True`` if the promotion succeeded, otherwise ``False``.
+        """
         if self.pending_promotion is None:
             return False
 
@@ -248,6 +272,7 @@ class Board:
         return self.is_square_attacked(king_pos[0], king_pos[1], opponent_color)
 
     def is_square_attacked(self, row, col, by_color):
+        """Return True if (row, col) is attacked by (by_color)."""
         return (
             self._pawn_attacks(row, col, by_color)
             or self._knight_attacks(row, col, by_color)

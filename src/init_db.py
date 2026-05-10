@@ -1,9 +1,10 @@
 import argparse
 
-from storage import SQLiteStorage
+from persistence.storage import SQLiteStorage
 
 
 def main():
+    """Initialize the SQLite schema for the chess application."""
     parser = argparse.ArgumentParser(description="Initialize the chess database schema")
     parser.add_argument(
         "--db-path",
