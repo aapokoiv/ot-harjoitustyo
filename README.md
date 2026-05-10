@@ -21,7 +21,7 @@ The app needs python version 3.12 or higher. It has been tested with 3.12.
 
 ## Latest release
 
-[Latest](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/viikko6)
+[Latest](https://github.com/aapokoiv/ot-harjoitustyo/releases/tag/loppupalautus)
 
 ## Installation
 
